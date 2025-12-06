@@ -1,7 +1,6 @@
 package com.example.soundforsilence.data
 
 import com.example.soundforsilence.domain.model.Category
-import com.example.soundforsilence.domain.model.Question
 import com.example.soundforsilence.domain.model.Video
 import com.example.soundforsilence.domain.repository.VideoRepository
 import kotlinx.coroutines.delay
@@ -35,6 +34,28 @@ class VideoRepositoryImpl : VideoRepository {
         )
     )
 
+    private val videosFlow = MutableStateFlow(
+        listOf(
+            Video(
+                id = "vid_1",
+                categoryId = "cat_detection",
+                title = "Responding to Name",
+                description = "Teach your child to respond to their name.",
+                duration = "3:25",
+                thumbnailUrl = "",
+                videoUrl = "https://storage.googleapis.com/exoplayer-test-media-0/BigBuckBunny_320x180.mp4",
+                order = 1,
+                isLocked = false,
+                watchProgress = 60,
+                isCompleted = false,
+                questions = listOf(/* ... */)
+            ),
+            // other videos...
+        )
+    )
+
+
+    /*
     private val videosFlow = MutableStateFlow(
         listOf(
             Video(
@@ -83,6 +104,8 @@ class VideoRepositoryImpl : VideoRepository {
             )
         )
     )
+
+     */
 
     override fun getCategories(): Flow<List<Category>> = categoriesFlow
 

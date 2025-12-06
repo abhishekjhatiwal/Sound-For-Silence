@@ -12,7 +12,7 @@ class AuthRepositoryImpl : AuthRepository {
     private val currentUserFlow = MutableStateFlow<User?>(null)
 
     override suspend fun login(phoneNumber: String, password: String): Result<User> {
-        // TODO: Replace with real backend / Firebase auth
+        // Replace with real backend / Firebase auth
         delay(500) // simulate network delay
 
         return if (phoneNumber.length >= 10 && password.length >= 4) {

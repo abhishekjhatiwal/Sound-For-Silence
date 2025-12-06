@@ -5,12 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -19,11 +13,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.soundforsilence.domain.model.Category
-import com.example.soundforsilence.domain.model.Video
-import com.example.soundforsilence.presentation.category.CategoryViewModel
 import com.example.soundforsilence.presentation.components.InfoCard
 import com.example.soundforsilence.presentation.components.SectionHeader
-import com.example.soundforsilence.presentation.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,12 +38,12 @@ fun HomeScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "Sunita Ji",
+            text = "Rakesh Kumar Ji",
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Tracking Ravi's Progress",
+            text = "Tracking Abhishek's Progress",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -101,42 +92,18 @@ fun HomeScreen(
 }
 
 
-//@Composable
-//fun VideoCard(video: Screen.Video, onClick: () -> Unit) {
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .clickable(onClick = onClick)
-//            .padding(vertical = 8.dp)
-//    ) {
-//        Column(Modifier.padding(16.dp)) {
-//            Text(video.title, style = MaterialTheme.typography.titleMedium)
-//            Text(video.description, style = MaterialTheme.typography.bodySmall)
-//        }
-//    }
-//}
-
-
-
-
-
-
-
-
-
-
-
-
 @Composable
 private fun CategoryCard(
     category: Category,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = modifier,
         shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
