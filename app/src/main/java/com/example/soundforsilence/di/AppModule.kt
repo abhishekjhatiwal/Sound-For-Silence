@@ -10,6 +10,7 @@ import com.example.soundforsilence.domain.usecase.GetAssessmentsUseCase
 import com.example.soundforsilence.domain.usecase.GetCategoriesUseCase
 import com.example.soundforsilence.domain.usecase.GetVideosByCategoryUseCase
 import com.example.soundforsilence.domain.usecase.LoginUseCase
+import com.example.soundforsilence.domain.usecase.RegisterUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -51,4 +52,8 @@ object AppModule {
     fun provideGetAssessmentsUseCase(
         assessmentRepository: AssessmentRepository
     ): GetAssessmentsUseCase = GetAssessmentsUseCase(assessmentRepository)
+
+    @Provides
+    fun provideRegisterUseCase(authRepository: AuthRepository): RegisterUseCase =
+        RegisterUseCase(authRepository)
 }

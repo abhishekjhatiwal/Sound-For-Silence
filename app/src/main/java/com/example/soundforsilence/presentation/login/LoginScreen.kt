@@ -1,18 +1,27 @@
 package com.example.soundforsilence.presentation.login
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.soundforsilence.presentation.components.PrimaryButton
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    onCreateAccountClick: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val phone = viewModel.phoneNumber
@@ -20,74 +29,167 @@ fun LoginScreen(
     val loading = viewModel.isLoading
     val error = viewModel.errorMessage
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // App icon card
+                Surface(
+                    modifier = Modifier
+                        .size(96.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.GraphicEq, // placeholder for your logo
+                            contentDescription = "App Icon",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
 
-            Text(
-                text = "Sound for Silence",
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Parent App",
-                style = MaterialTheme.typography.titleMedium
-            )
+                Spacer(Modifier.height(24.dp))
 
-            Spacer(Modifier.height(24.dp))
+                // Title
+                Text(
+                    text = "Sound for Silence",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    textAlign = TextAlign.Center
+                )
 
-            OutlinedTextField(
-                value = phone,
-                onValueChange = viewModel::onPhoneChange,
-                label = { Text("Mobile Number") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = viewModel::onPasswordChange,
-                label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            if (error != null) {
                 Spacer(Modifier.height(8.dp))
-                Text(text = error, color = MaterialTheme.colorScheme.error)
+
+                // Subtitle
+                Text(
+                    text = "Empowering caregivers through technology",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.height(32.dp))
+
+                // Mobile Number field
+                TextField(
+                    value = phone,
+                    onValueChange = viewModel::onPhoneChange,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    placeholder = { Text("Mobile Number") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(24.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.surface,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                // Password field
+                TextField(
+                    value = password,
+                    onValueChange = viewModel::onPasswordChange,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    placeholder = { Text("Password") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.surface,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+
+                if (error != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // Sign In button
+                Button(
+                    onClick = { viewModel.onLoginClick(onLoginSuccess) },
+                    enabled = !loading,
+                    shape = RoundedCornerShape(26.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                ) {
+                    if (loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Spacer(Modifier.width(4.dp)) // to balance arrow on right
+                            Text("Sign In")
+                            Icon(
+                                imageVector = Icons.Filled.ArrowForward,
+                                contentDescription = "Sign In"
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // "New here? Create Account"
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "New here? ",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Create Account",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { onCreateAccountClick() }
+                    )
+                }
             }
-
-            Spacer(Modifier.height(16.dp))
-
-//            Button(
-//                onClick = { viewModel.onLoginClick(onLoginSuccess) },
-//                modifier = Modifier.fillMaxWidth(),
-//                enabled = !loading
-//            ) {
-//                if (loading) {
-//                    CircularProgressIndicator(
-//                        modifier = Modifier.size(18.dp),
-//                        strokeWidth = 2.dp
-//                    )
-//                } else {
-//                    Text("Sign In")
-//                }
-//            }
-
-            PrimaryButton(
-                text = "Sign In",
-                isLoading = loading,
-                onClick = { viewModel.onLoginClick(onLoginSuccess) }
-            )
-
         }
     }
 }
+

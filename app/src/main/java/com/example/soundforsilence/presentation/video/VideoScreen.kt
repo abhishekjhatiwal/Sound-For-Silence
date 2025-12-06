@@ -7,7 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +45,7 @@ fun VideoScreen(
                 Spacer(Modifier.height(24.dp))
 
                 Button(
-                    onClick = { /* TODO: start video player */ },
+                    onClick = { /* TODO: play video */ },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Play Video")
@@ -61,3 +61,4 @@ fun VideoScreen(
         }
     }
 }
+
