@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "492009515018",
+    "project_id": "sound-for-silence-f3ac1",
+    "storage_bucket": "sound-for-silence-f3ac1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:492009515018:android:770b7aa864bd950083d7f3",
+        "android_client_info": {
+          "package_name": "com.example.soundforsilence"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcbrfkMNeJmEGKUoz7oYpJlFghshEW5pU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

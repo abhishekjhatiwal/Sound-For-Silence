@@ -1,0 +1,70 @@
+<resources>
+    <string name="app_name">Sound For Silence</string>
+
+    <!-- Login Screen -->
+    <string name="login_title">Sound for Silence</string>
+    <string name="login_subtitle">Empowering caregivers through technology</string>
+    <string name="login_phone_hint">Mobile Number</string>
+    <string name="login_password_hint">Password</string>
+    <string name="login_button">Sign In</string>
+    <string name="login_register_text">New here?</string>
+    <string name="login_register_link">Create Account</string>
+    <string name="login_error_empty">Phone number and password cannot be empty</string>
+    <string name="login_error_failed">Login failed. Please check your credentials</string>
+
+    <!-- Home Screen -->
+    <string name="home_welcome">Welcome back,</string>
+    <string name="home_tracking">Tracking %s\'s Progress</string>
+    <string name="home_videos_label">Videos</string>
+    <string name="home_progress_label">Progress</string>
+    <string name="home_streak_label">Day Streak</string>
+    <string name="home_learning_stages">Learning Stages</string>
+    <string name="home_videos_completed">%1$d of %2$d videos completed</string>
+
+    <!-- Category Screen -->
+    <string name="category_back">Back</string>
+    <string name="category_download">Download</string>
+    <string name="category_locked">Locked</string>
+
+    <!-- Video Screen -->
+    <string name="video_back_to_videos">Back to Videos</string>
+    <string name="video_download_offline">Download for Offline</string>
+    <string name="video_duration">%s mins</string>
+
+    <!-- Progress Screen -->
+    <string name="progress_title">Progress</string>
+    <string name="progress_empty">No assessments recorded yet</string>
+    <string name="progress_assessment">%s Assessment</string>
+    <string name="progress_cap_score">CAP Score</string>
+    <string name="progress_sir_score">SIR Score</string>
+    <string name="progress_out_of">out of %d</string>
+    <string name="progress_next_due">Next assessment due: %s</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_profile">Profile</string>
+    <string name="settings_my_profile">My Profile</string>
+    <string name="settings_child_details">Child Details</string>
+    <string name="settings_app_settings">App Settings</string>
+    <string name="settings_language">Language / भाषा</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_enabled">Enabled</string>
+    <string name="settings_notifications_disabled">Disabled</string>
+    <string name="settings_downloaded_videos">Downloaded Videos</string>
+    <string name="settings_support">Support</string>
+    <string name="settings_help">Help &amp; FAQ</string>
+    <string name="settings_logout">Logout</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_progress">Progress</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Common -->
+    <string name="loading">Loading…</string>
+    <string name="error_generic">Something went wrong</string>
+    <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="continue_text">Continue</string>
+</resources>
