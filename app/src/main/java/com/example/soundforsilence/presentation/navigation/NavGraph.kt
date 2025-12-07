@@ -65,6 +65,7 @@ fun AppNavGraph(
         // HOME
         composable(Screen.Home.route) {
             HomeScreen(
+                currentLanguage = currentLanguage,
                 onCategoryClick = { categoryId ->
                     navController.navigate(Screen.Category.createRoute(categoryId))
                 },
@@ -109,7 +110,7 @@ fun AppNavGraph(
 
         // PROGRESS
         composable(Screen.Progress.route) {
-            ProgressScreen()
+            ProgressScreen(currentLanguage = currentLanguage)
         }
 
         // SETTINGS

@@ -5,18 +5,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.soundforsilence.core.AppLanguage
+import com.example.soundforsilence.core.stringsFor
 import com.example.soundforsilence.domain.model.Assessment
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun ProgressScreen(
+    currentLanguage: AppLanguage,
     viewModel: ProgressViewModel = hiltViewModel()
 ) {
+    val strings = stringsFor(currentLanguage)
+
     val assessments by viewModel.assessments.collectAsState()
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
@@ -26,7 +32,7 @@ fun ProgressScreen(
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Text(
-            text = "Progress",
+            text = strings.progressTitle, // "Progress" / "प्रोग्रेस"
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
         )
         Spacer(Modifier.height(12.dp))
@@ -38,20 +44,37 @@ fun ProgressScreen(
             items(assessments) { assessment ->
                 AssessmentCard(
                     assessment = assessment,
-                    dateText = dateFormat.format(Date(assessment.assessmentDate))
+                    dateText = dateFormat.format(Date(assessment.assessmentDate)),
+                    currentLanguage = currentLanguage
                 )
             }
         }
     }
 }
 
-// keep your AssessmentCard / ScoreCard same as before
-
 @Composable
 private fun AssessmentCard(
     assessment: Assessment,
-    dateText: String
+    dateText: String,
+    currentLanguage: AppLanguage
 ) {
+    val capLabel = when (currentLanguage) {
+        AppLanguage.ENGLISH -> "CAP Score"
+        AppLanguage.HINDI -> "CAP स्कोर"
+    }
+    val sirLabel = when (currentLanguage) {
+        AppLanguage.ENGLISH -> "SIR Score"
+        AppLanguage.HINDI -> "SIR स्कोर"
+    }
+    val capOutOf = when (currentLanguage) {
+        AppLanguage.ENGLISH -> "out of 7"
+        AppLanguage.HINDI -> "7 में से"
+    }
+    val sirOutOf = when (currentLanguage) {
+        AppLanguage.ENGLISH -> "out of 5"
+        AppLanguage.HINDI -> "5 में से"
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -84,22 +107,21 @@ private fun AssessmentCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 ScoreCard(
-                    label = "CAP Score",
+                    label = capLabel,
                     value = assessment.capScore.toString(),
-                    outOf = "out of 7",
+                    outOf = capOutOf,
                     modifier = Modifier.weight(1f)
                 )
                 ScoreCard(
-                    label = "SIR Score",
+                    label = sirLabel,
                     value = assessment.sirScore.toString(),
-                    outOf = "out of 5",
+                    outOf = sirOutOf,
                     modifier = Modifier.weight(1f)
                 )
             }
         }
     }
 }
-
 
 @Composable
 private fun ScoreCard(
@@ -119,7 +141,7 @@ private fun ScoreCard(
             modifier = Modifier
                 .padding(vertical = 16.dp)
                 .fillMaxWidth(),
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = value,
@@ -138,3 +160,4 @@ private fun ScoreCard(
         }
     }
 }
+

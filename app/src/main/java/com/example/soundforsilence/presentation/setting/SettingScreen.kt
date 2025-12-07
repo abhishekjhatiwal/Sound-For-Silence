@@ -19,7 +19,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.soundforsilence.core.AppLanguage
 import com.example.soundforsilence.core.stringsFor
-import com.example.soundforsilence.presentation.components.SimpleListItem
 import com.example.soundforsilence.presentation.profile.child.ChildProfileViewModel
 import com.example.soundforsilence.presentation.profile.parent.ProfileViewModel
 
@@ -84,10 +83,11 @@ fun SettingsScreen(
         Spacer(Modifier.height(8.dp))
 
         // My Profile card
-        SettingsCard(onClick = onProfileClick) {
+        SettingsCard {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable { onProfileClick() }
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -128,10 +128,11 @@ fun SettingsScreen(
         }
 
         // Child details card
-        SettingsCard(onClick = onChildClick) {
+        SettingsCard {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable { onChildClick() }
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -171,30 +172,44 @@ fun SettingsScreen(
         )
         Spacer(Modifier.height(8.dp))
 
-        // 🌐 Language card
-        SettingsCard(
-            onClick = {
-                tempSelectedLanguage = currentLanguage
-                showLanguageDialog = true
-            }
-        ) {
-            SimpleListItem(
-                title = strings.language,
-                subtitle = when (currentLanguage) {
-                    AppLanguage.ENGLISH -> "English"
-                    AppLanguage.HINDI -> "हिन्दी"
-                },
-                trailing = {
-                    Icon(
-                        imageVector = Icons.Default.Language,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+        // 🌐 Language card – make the ROW clickable, not the Card
+        SettingsCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        tempSelectedLanguage = currentLanguage
+                        showLanguageDialog = true
+                    }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = strings.language,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                    Text(
+                        text = when (currentLanguage) {
+                            AppLanguage.ENGLISH -> "English"
+                            AppLanguage.HINDI -> "हिन्दी"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            )
+                Icon(
+                    imageVector = Icons.Default.Language,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
-        // Notifications card
+        // Notifications
         SettingsCard {
             Row(
                 modifier = Modifier
@@ -227,7 +242,7 @@ fun SettingsScreen(
             }
         }
 
-        // Dark Mode card
+        // Dark Mode
         SettingsCard {
             Row(
                 modifier = Modifier
@@ -256,7 +271,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // LOGOUT card
+        // LOGOUT
         SettingsCard {
             Row(
                 modifier = Modifier
@@ -351,47 +366,18 @@ fun SettingsScreen(
 @Composable
 private fun SettingsCard(
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    // Use normal Card + Modifier.clickable for reliable clicks
-    val clickableModifier = if (onClick != null) {
-        modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clickable { onClick() }
-    } else {
-        modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    }
-
     Card(
-        modifier = clickableModifier,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
     ) {
         Column(content = content)
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
