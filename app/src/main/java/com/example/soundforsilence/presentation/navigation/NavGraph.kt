@@ -13,6 +13,7 @@ import com.example.soundforsilence.presentation.category.CategoryScreen
 import com.example.soundforsilence.presentation.createaccount.CreateAccountScreen
 import com.example.soundforsilence.presentation.home.HomeScreen
 import com.example.soundforsilence.presentation.login.LoginScreen
+import com.example.soundforsilence.presentation.profile.ProfileScreen
 import com.example.soundforsilence.presentation.progress.ProgressScreen
 import com.example.soundforsilence.presentation.setting.SettingsScreen
 import com.example.soundforsilence.presentation.video.VideoScreen
@@ -66,6 +67,9 @@ fun AppNavGraph(
                 },
                 onSettingsClick = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onVideosClick = {
+                    navController.navigate(Screen.Video.route)
                 }
             )
         }
@@ -102,7 +106,7 @@ fun AppNavGraph(
             ProgressScreen()
         }
 
-        // SETTINGS
+// SETTINGS
         composable(Screen.Settings.route) {
             SettingsScreen(
                 onLogoutSuccess = {
@@ -110,138 +114,22 @@ fun AppNavGraph(
                         popUpTo(Screen.Login.route) { inclusive = true }
                         launchSingleTop = true
                     }
+                },
+                onProfileClick = {
+                    navController.navigate(Screen.Profile.route)
                 }
             )
         }
+
+// PROFILE
+        composable(Screen.Profile.route) {   // ✅ use the sealed class route
+            ProfileScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
     }
 }
 
 
 
-
-
-
-/*
-@Composable
-fun AppNavGraph(
-    navController: NavHostController,
-    padding: PaddingValues
-) {
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Login.route,
-        modifier = Modifier.padding(padding)
-    ) {
-        composable(Screen.Login.route) {
-            LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
-                onCreateAccountClick = {
-                    navController.navigate(Screen.CreateAccount.route)
-                }
-            )
-        }
-
-        composable(Screen.CreateAccount.route) {
-            CreateAccountScreen(
-                onBack = { navController.popBackStack() },
-                onAccountCreated = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-
-        composable(
-            route = Screen.Category.route,
-            arguments = listOf(
-                navArgument("categoryId") { type = NavType.StringType }
-            )
-        ) {
-            CategoryScreen(
-                onBack = { navController.popBackStack() },
-                onVideoClick = { videoId ->
-                    navController.navigate(Screen.Video.createRoute(videoId))
-                }
-            )
-        }
-
-
-        composable(Screen.Home.route) {
-            HomeScreen(
-                onCategoryClick = { categoryId ->
-                    navController.navigate(Screen.Category.createRoute(categoryId))
-                },
-                onProgressClick = {
-                    navController.navigate(Screen.Progress.route)
-                },
-                onSettingsClick = {
-                    navController.navigate(Screen.Settings.route)
-                }
-            )
-        }
-
-        composable(Screen.Progress.route) {
-            ProgressScreen()
-        }
-
-        composable(Screen.Settings.route) {
-            SettingsScreen(
-                onLogoutSuccess = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-
-        composable(
-            route = Screen.Category.route,
-            arguments = listOf(
-                navArgument("categoryId") { type = NavType.StringType }
-            )
-        ) {
-            CategoryScreen(
-                onBack = { navController.popBackStack() },
-                onVideoClick = { videoId ->
-                    navController.navigate(Screen.Video.createRoute(videoId))
-                }
-            )
-        }
-
-        composable(
-            route = Screen.Category.route,
-            arguments = listOf(
-                navArgument("categoryId") { type = NavType.StringType }
-            )
-        ) {
-            CategoryScreen(
-                onBack = { navController.popBackStack() },
-                onVideoClick = { videoId ->
-                    navController.navigate(Screen.Video.createRoute(videoId))
-                }
-            )
-        }
-
-        composable(
-            route = Screen.Video.route,
-            arguments = listOf(
-                navArgument("videoId") { type = NavType.StringType }
-            )
-        ) {
-            VideoScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-    }
-}
-
-
- */

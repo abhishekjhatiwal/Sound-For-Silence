@@ -13,4 +13,6 @@ sealed class Screen(val route: String) {
     data object Video : Screen("video/{videoId}") {
         fun createRoute(videoId: String) = "video/$videoId"
     }
+
+    data object Profile : Screen("profile")
 }

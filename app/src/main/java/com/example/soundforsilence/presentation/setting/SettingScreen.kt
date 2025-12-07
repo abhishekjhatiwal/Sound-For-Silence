@@ -18,6 +18,7 @@ import com.example.soundforsilence.presentation.components.SimpleListItem
 @Composable
 fun SettingsScreen(
     onLogoutSuccess: () -> Unit,
+    onProfileClick: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
@@ -35,17 +36,31 @@ fun SettingsScreen(
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
         )
 
+        // 🔧 Debug helper: you can remove this later
+        Text(
+            text = "DEBUG: Tap here to go to profile",
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .clickable { onProfileClick() },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+
         Spacer(Modifier.height(16.dp))
 
         // PROFILE
         Text(
             text = "PROFILE",
+            modifier = Modifier
+                .padding(top = 8.dp),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(8.dp))
 
-        SettingsCard {
+        SettingsCard(
+            onClick = onProfileClick      // ✅ call nav when card tapped
+        ) {
             SimpleListItem(
                 title = "My Profile",
                 subtitle = "Rakesh Kumar",
@@ -58,6 +73,7 @@ fun SettingsScreen(
                 }
             )
         }
+
 
         SettingsCard {
             SimpleListItem(
@@ -141,7 +157,7 @@ fun SettingsScreen(
                     }
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
                 Text(
                     text = "Logout",
@@ -169,201 +185,39 @@ fun SettingsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsCard(
-    content: @Composable ColumnScope.() -> Unit
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        onClick = { onClick?.invoke() },           // ✅ Card click
+        enabled = onClick != null                  // Only clickable if we pass a lambda
     ) {
         Column(content = content)
     }
 }
 
 
+//@Composable
+//private fun SettingsCard(
+//    content: @Composable ColumnScope.() -> Unit,
+//) {
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(vertical = 4.dp),
+//        shape = MaterialTheme.shapes.large,
+//        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+//    ) {
+//        Column(content = content)
+//    }
+//}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-@Composable
-fun SettingsScreen() {
-    var notificationsEnabled by remember { mutableStateOf(true) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        Text(
-            text = "Settings",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = "PROFILE",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(8.dp))
-
-        SettingsCard {
-            SimpleListItem(
-                title = "My Profile",
-                subtitle = "Sunita Devi",
-                trailing = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            )
-        }
-
-        SettingsCard {
-            SimpleListItem(
-                title = "Child Details",
-                subtitle = "Ravi Kumar",
-                trailing = {
-                    Icon(
-                        imageVector = Icons.Default.PersonOutline,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            )
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = "APP SETTINGS",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(8.dp))
-
-        SettingsCard {
-            SimpleListItem(
-                title = "Language / भाषा",
-                subtitle = "English",
-                trailing = {
-                    Icon(
-                        imageVector = Icons.Default.Language,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            )
-        }
-
-        SettingsCard {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp, horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Notifications",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                    )
-                    Text(
-                        text = if (notificationsEnabled) "Enabled" else "Disabled",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Switch(
-                    checked = notificationsEnabled,
-                    onCheckedChange = { notificationsEnabled = it },
-                    thumbContent = {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = null
-                        )
-                    }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // -----------------------------
-        //   LOGOUT BUTTON
-        // -----------------------------
-
-        SettingsCard {
-            Text(
-                text = "Logout",
-                modifier = Modifier
-                    .clickable {
-                        viewModel.logout {
-                            onLogout()  // callback
-                        }
-                    }
-                    .padding(16.dp),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SettingsCard(
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-    ) {
-        Column(content = content)
-    }
-}
-
- */

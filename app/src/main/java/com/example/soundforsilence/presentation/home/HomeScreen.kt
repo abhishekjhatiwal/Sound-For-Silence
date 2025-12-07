@@ -22,6 +22,7 @@ fun HomeScreen(
     onCategoryClick: (String) -> Unit,
     onProgressClick: () -> Unit,   // now unused, but you can keep/remove
     onSettingsClick: () -> Unit,   // now unused, but you can keep/remove
+    onVideosClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val categories by viewModel.categories.collectAsState()
@@ -99,7 +100,7 @@ private fun CategoryCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth().clickable { onClick() },
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
