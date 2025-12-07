@@ -9,6 +9,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.soundforsilence.core.AppLanguage
 import com.example.soundforsilence.presentation.category.CategoryScreen
 import com.example.soundforsilence.presentation.createaccount.CreateAccountScreen
 import com.example.soundforsilence.presentation.home.HomeScreen
@@ -24,7 +25,9 @@ fun AppNavGraph(
     navController: NavHostController,
     padding: PaddingValues,
     isDarkTheme: Boolean,
-    onThemeChanged: (Boolean) -> Unit
+    onThemeChanged: (Boolean) -> Unit,
+    currentLanguage: AppLanguage,
+    onLanguageChanged: (AppLanguage) -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -125,7 +128,9 @@ fun AppNavGraph(
                     navController.navigate(Screen.ChildProfile.route)
                 },
                 isDarkTheme = isDarkTheme,
-                onThemeChanged = onThemeChanged
+                onThemeChanged = onThemeChanged,
+                currentLanguage = currentLanguage,
+                onLanguageChanged = onLanguageChanged
             )
         }
 

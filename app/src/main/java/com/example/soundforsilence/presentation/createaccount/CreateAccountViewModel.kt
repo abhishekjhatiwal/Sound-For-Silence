@@ -18,6 +18,86 @@ class CreateAccountViewModel @Inject constructor(
     var name by mutableStateOf("")
         private set
 
+    // Phone number OR email
+    var contact by mutableStateOf("")
+        private set
+
+    var password by mutableStateOf("")
+        private set
+
+    var childName by mutableStateOf("")
+        private set
+
+    var isLoading by mutableStateOf(false)
+        private set
+
+    var errorMessage by mutableStateOf<String?>(null)
+        private set
+
+    fun onNameChange(value: String) { name = value }
+    fun onContactChange(value: String) { contact = value }
+    fun onPasswordChange(value: String) { password = value }
+    fun onChildNameChange(value: String) { childName = value }
+
+    fun onCreateAccountClick(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+
+            // contact can be phone or email
+            val result = registerUseCase(name, contact, password, childName)
+
+            isLoading = false
+
+            result
+                .onSuccess { onSuccess() }
+                .onFailure { error ->
+                    errorMessage = error.message ?: "Failed to create account"
+                }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+@HiltViewModel
+class CreateAccountViewModel @Inject constructor(
+    private val registerUseCase: RegisterUseCase
+) : ViewModel() {
+
+    var name by mutableStateOf("")
+        private set
+
     var phoneNumber by mutableStateOf("")
         private set
 
@@ -55,3 +135,5 @@ class CreateAccountViewModel @Inject constructor(
         }
     }
 }
+
+ */

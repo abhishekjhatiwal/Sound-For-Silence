@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.soundforsilence.core.AppLanguage
 import com.example.soundforsilence.presentation.navigation.Screen
 
 @AndroidEntryPoint
@@ -37,6 +38,9 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+
+                // 🌐 Language state (English / Hindi)
+                var currentLanguage by rememberSaveable { mutableStateOf(AppLanguage.ENGLISH) }
 
                 Scaffold(
                     bottomBar = {
@@ -59,6 +63,10 @@ class MainActivity : ComponentActivity() {
                         padding = padding,
                         isDarkTheme = isDarkTheme,
                         onThemeChanged = { isDarkTheme = it },
+                        currentLanguage = currentLanguage,
+                        onLanguageChanged = { newLang ->
+                            currentLanguage = newLang
+                        }
                     )
                 }
             }
