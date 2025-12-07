@@ -28,18 +28,19 @@ fun SettingsScreen(
     onChildClick: () -> Unit,
     isDarkTheme: Boolean,
     onThemeChanged: (Boolean) -> Unit,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    childViewModel: ChildProfileViewModel = hiltViewModel(),
 ) {
     // 👇 Get parent + child data
     val profileViewModel: ProfileViewModel = hiltViewModel()
     val profileState by profileViewModel.state.collectAsState()
 
-    val childViewModel: ChildProfileViewModel = hiltViewModel()
+//    val childViewModel: ChildProfileViewModel = hiltViewModel()
     val childState by childViewModel.state.collectAsState()
 
     // Load when Settings opens
     LaunchedEffect(Unit) {
-        profileViewModel.loadProfile()
+//        profileViewModel.loadProfile()
         childViewModel.loadChildProfile()
     }
 
