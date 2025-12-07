@@ -15,7 +15,8 @@ class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase
 ) : ViewModel() {
 
-    var phoneNumber by mutableStateOf("")
+    // Can be phone number OR email
+    var identifier by mutableStateOf("")
         private set
 
     var password by mutableStateOf("")
@@ -27,8 +28,8 @@ class LoginViewModel @Inject constructor(
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-    fun onPhoneChange(value: String) {
-        phoneNumber = value
+    fun onIdentifierChange(value: String) {
+        identifier = value
     }
 
     fun onPasswordChange(value: String) {
@@ -37,10 +38,17 @@ class LoginViewModel @Inject constructor(
 
     fun onLoginClick(onSuccess: () -> Unit) {
         viewModelScope.launch {
+            // Basic validation
+            if (identifier.isBlank() || password.isBlank()) {
+                errorMessage = "Please enter phone/email and password"
+                return@launch
+            }
+
             isLoading = true
             errorMessage = null
 
-            val result = loginUseCase(phoneNumber, password)
+            // identifier can be phone or email
+            val result = loginUseCase(identifier.trim(), password)
             isLoading = false
 
             result

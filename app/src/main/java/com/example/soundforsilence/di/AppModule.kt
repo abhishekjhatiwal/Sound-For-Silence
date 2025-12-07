@@ -13,6 +13,9 @@ import com.example.soundforsilence.domain.usecase.GetCategoriesUseCase
 import com.example.soundforsilence.domain.usecase.GetVideosByCategoryUseCase
 import com.example.soundforsilence.domain.usecase.LoginUseCase
 import com.example.soundforsilence.domain.usecase.RegisterUseCase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -66,5 +69,25 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideChildProfileRepository(): ChildProfileRepository = ChildProfileRepository()
+    fun provideChildProfileRepository(
+        auth: FirebaseAuth,
+        db: DatabaseReference
+    ): ChildProfileRepository = ChildProfileRepository(auth, db)
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideDatabaseReference(): DatabaseReference =
+        FirebaseDatabase.getInstance().reference
+
+//    @Provides
+//    @Singleton
+//    fun provideChildProfileRepository(
+//        impl: ChildProfileRepositoryImpl
+//    ): ChildProfileRepository = impl
+
+
 }

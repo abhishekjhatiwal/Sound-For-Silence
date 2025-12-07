@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.foundation)
 //    implementation(libs.firebase.firestore.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -68,15 +69,21 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.compose.material:material-icons-extended")
 
-    // Firebase BOM (controls versions of all Firebase libraries)
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    // 🔹 Firebase BoM – central place for versions
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
 
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation(libs.firebase.storage)
+    // 🔹 Auth KTX (for Firebase.auth + com.google.firebase.auth.ktx.auth)
+    implementation("com.google.firebase:firebase-auth-ktx")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    // 🔹 Common KTX (for com.google.firebase.ktx.Firebase)
+    implementation("com.google.firebase:firebase-common-ktx")
 
+    // If you use Firestore:
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-database")           //Realtimedatabase
+
+    // If you use Storage for profile images:
+    implementation("com.google.firebase:firebase-storage-ktx")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.57.2")
