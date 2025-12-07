@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -24,7 +26,7 @@ fun LoginScreen(
     onCreateAccountClick: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    val phone = viewModel.phoneNumber
+    val identifier = viewModel.identifier   // <- phone or email
     val password = viewModel.password
     val loading = viewModel.isLoading
     val error = viewModel.errorMessage
@@ -55,7 +57,7 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.GraphicEq, // placeholder for your logo
+                            imageVector = Icons.Filled.GraphicEq,
                             contentDescription = "App Icon",
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
@@ -85,14 +87,17 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(32.dp))
 
-                // Mobile Number field
+                // Phone or Email field
                 TextField(
-                    value = phone,
-                    onValueChange = viewModel::onPhoneChange,
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    placeholder = { Text("Mobile Number") },
+                    value = identifier,
+                    onValueChange = viewModel::onIdentifierChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Phone Number or Email ID") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        // Accepts both emails and numbers fine
+                        keyboardType = KeyboardType.Email
+                    ),
                     shape = RoundedCornerShape(24.dp),
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -109,8 +114,7 @@ fun LoginScreen(
                 TextField(
                     value = password,
                     onValueChange = viewModel::onPasswordChange,
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Password") },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
@@ -157,7 +161,7 @@ fun LoginScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Spacer(Modifier.width(4.dp)) // to balance arrow on right
+                            Spacer(Modifier.width(4.dp))
                             Text("Sign In")
                             Icon(
                                 imageVector = Icons.Filled.ArrowForward,

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -15,16 +16,30 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.soundforsilence.domain.model.Category
 import com.example.soundforsilence.presentation.components.InfoCard
 import com.example.soundforsilence.presentation.components.SectionHeader
+import com.example.soundforsilence.presentation.profile.child.ChildProfileViewModel
+import com.example.soundforsilence.presentation.profile.parent.ProfileViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onCategoryClick: (String) -> Unit,
-    onProgressClick: () -> Unit,   // now unused, but you can keep/remove
-    onSettingsClick: () -> Unit,   // now unused, but you can keep/remove
-    viewModel: HomeViewModel = hiltViewModel()
+    onProgressClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onVideosClick: () -> Unit,
+    viewModel: HomeViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    childViewModel: ChildProfileViewModel = hiltViewModel()
 ) {
     val categories by viewModel.categories.collectAsState()
+    val profileState by profileViewModel.state.collectAsState()
+    val childState by childViewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        profileViewModel.loadProfile()
+        childViewModel.loadChildProfile()
+    }
+
+    val parentName = if (profileState.name.isNotBlank()) profileState.name else "Rakesh Kumar Ji"
+    val childName = if (childState.name.isNotBlank()) childState.name else "Abhishek"
 
     Column(
         modifier = Modifier
@@ -38,12 +53,12 @@ fun HomeScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "Rakesh Kumar Ji",
+            text = parentName,
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Tracking Abhishek's Progress",
+            text = "Tracking $childName's Progress",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -91,7 +106,6 @@ fun HomeScreen(
     }
 }
 
-
 @Composable
 private fun CategoryCard(
     category: Category,
@@ -99,7 +113,7 @@ private fun CategoryCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth().clickable { onClick() },
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -133,5 +147,7 @@ private fun CategoryCard(
         }
     }
 }
+
+
 
 

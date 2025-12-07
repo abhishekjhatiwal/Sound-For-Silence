@@ -5,12 +5,17 @@ import com.example.soundforsilence.data.AuthRepositoryImpl
 import com.example.soundforsilence.data.VideoRepositoryImpl
 import com.example.soundforsilence.domain.repository.AssessmentRepository
 import com.example.soundforsilence.domain.repository.AuthRepository
+import com.example.soundforsilence.domain.repository.ChildProfileRepository
+import com.example.soundforsilence.domain.repository.ProfileRepository
 import com.example.soundforsilence.domain.repository.VideoRepository
 import com.example.soundforsilence.domain.usecase.GetAssessmentsUseCase
 import com.example.soundforsilence.domain.usecase.GetCategoriesUseCase
 import com.example.soundforsilence.domain.usecase.GetVideosByCategoryUseCase
 import com.example.soundforsilence.domain.usecase.LoginUseCase
 import com.example.soundforsilence.domain.usecase.RegisterUseCase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -56,4 +61,33 @@ object AppModule {
     @Provides
     fun provideRegisterUseCase(authRepository: AuthRepository): RegisterUseCase =
         RegisterUseCase(authRepository)
+
+    // e.g., AppModule.kt
+    @Provides
+    @Singleton
+    fun provideProfileRepository(): ProfileRepository = ProfileRepository()
+
+    @Provides
+    @Singleton
+    fun provideChildProfileRepository(
+        auth: FirebaseAuth,
+        db: DatabaseReference
+    ): ChildProfileRepository = ChildProfileRepository(auth, db)
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideDatabaseReference(): DatabaseReference =
+        FirebaseDatabase.getInstance().reference
+
+//    @Provides
+//    @Singleton
+//    fun provideChildProfileRepository(
+//        impl: ChildProfileRepositoryImpl
+//    ): ChildProfileRepository = impl
+
+
 }

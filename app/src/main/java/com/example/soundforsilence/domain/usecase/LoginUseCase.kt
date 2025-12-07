@@ -7,6 +7,18 @@ import javax.inject.Inject
 class LoginUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
+    suspend operator fun invoke(identifier: String, password: String) =
+        authRepository.login(identifier, password)
+}
+
+
+
+
+
+/*
+class LoginUseCase @Inject constructor(
+    private val authRepository: AuthRepository
+) {
     suspend operator fun invoke(phoneNumber: String, password: String): Result<User> {
         if (phoneNumber.isBlank() || password.isBlank()) {
             return Result.failure(Exception("Phone number and password cannot be empty"))
@@ -14,3 +26,5 @@ class LoginUseCase @Inject constructor(
         return authRepository.login(phoneNumber, password)
     }
 }
+
+ */
