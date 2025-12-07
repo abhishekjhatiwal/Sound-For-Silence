@@ -109,7 +109,7 @@ fun AppNavGraph(
             ProgressScreen()
         }
 
-    // SETTINGS
+        // SETTINGS
         composable(Screen.Settings.route) {
             SettingsScreen(
                 onLogoutSuccess = {
@@ -127,7 +127,7 @@ fun AppNavGraph(
             )
         }
 
-    // PROFILE
+        // PROFILE
         composable(Screen.Profile.route) {   // ✅ use the sealed class route
             ProfileScreen(
                 onBackClick = { navController.popBackStack() }

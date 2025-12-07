@@ -5,6 +5,7 @@ import com.example.soundforsilence.data.AuthRepositoryImpl
 import com.example.soundforsilence.data.VideoRepositoryImpl
 import com.example.soundforsilence.domain.repository.AssessmentRepository
 import com.example.soundforsilence.domain.repository.AuthRepository
+import com.example.soundforsilence.domain.repository.ChildProfileRepository
 import com.example.soundforsilence.domain.repository.ProfileRepository
 import com.example.soundforsilence.domain.repository.VideoRepository
 import com.example.soundforsilence.domain.usecase.GetAssessmentsUseCase
@@ -63,4 +64,7 @@ object AppModule {
     @Singleton
     fun provideProfileRepository(): ProfileRepository = ProfileRepository()
 
+    @Provides
+    @Singleton
+    fun provideChildProfileRepository(): ChildProfileRepository = ChildProfileRepository()
 }

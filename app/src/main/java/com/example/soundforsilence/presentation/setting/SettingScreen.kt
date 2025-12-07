@@ -2,6 +2,7 @@ package com.example.soundforsilence.presentation.setting
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
@@ -11,13 +12,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.soundforsilence.presentation.components.SimpleListItem
 import coil.compose.AsyncImage
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
+import com.example.soundforsilence.presentation.components.SimpleListItem
+import com.example.soundforsilence.presentation.profile.child.ChildProfileViewModel
+import com.example.soundforsilence.presentation.profile.parent.ProfileViewModel
 
 @Composable
 fun SettingsScreen(
@@ -28,6 +30,19 @@ fun SettingsScreen(
     onThemeChanged: (Boolean) -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
+    // 👇 Get parent + child data
+    val profileViewModel: ProfileViewModel = hiltViewModel()
+    val profileState by profileViewModel.state.collectAsState()
+
+    val childViewModel: ChildProfileViewModel = hiltViewModel()
+    val childState by childViewModel.state.collectAsState()
+
+    // Load when Settings opens
+    LaunchedEffect(Unit) {
+        profileViewModel.loadProfile()
+        childViewModel.loadChildProfile()
+    }
+
     var notificationsEnabled by remember { mutableStateOf(true) }
     val isLoggingOut = viewModel.isLoggingOut
     val logoutError = viewModel.logoutError
@@ -54,7 +69,7 @@ fun SettingsScreen(
         )
         Spacer(Modifier.height(8.dp))
 
-        // 🔥 Completely custom clickable card for "My Profile"
+        // ✅ My Profile card shows live parent name + avatar
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -80,16 +95,15 @@ fun SettingsScreen(
                         )
                     )
                     Text(
-                        text = "Rakesh Kumar", // later use real name from repo
+                        text = if (profileState.name.isNotBlank()) profileState.name else "Rakesh Kumar",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                // Avatar
-                if (/* you have state.profileImageUrl != null */ false) {
+                if (!profileState.imageUrl.isNullOrBlank()) {
                     AsyncImage(
-                        model = Icons.Default.Person /* state.profileImageUrl */,
+                        model = profileState.imageUrl,
                         contentDescription = "Profile photo",
                         modifier = Modifier
                             .size(40.dp)
@@ -105,23 +119,45 @@ fun SettingsScreen(
             }
         }
 
-        // Child details can still use SettingsCard + SimpleListItem
-        SettingsCard(
-            modifier = Modifier.clickable { onChildClick() }
+        // ✅ Child card shows live child name
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clickable { onChildClick() },
+            shape = MaterialTheme.shapes.large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
-            SimpleListItem(
-                title = "Child Details",
-                subtitle = "Abhishek Verma",
-                trailing = {
-                    Icon(
-                        imageVector = Icons.Default.PersonOutline,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Child Details",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                    Text(
+                        text = if (childState.name.isNotBlank()) childState.name else "Abhishek Verma",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            )
-        }
 
+                Icon(
+                    imageVector = Icons.Default.PersonOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
         Spacer(Modifier.height(16.dp))
 
@@ -190,9 +226,7 @@ fun SettingsScreen(
                 Column {
                     Text(
                         text = "Dark Mode",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Medium
-                        )
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                     )
                     Text(
                         text = if (isDarkTheme) "On" else "Off",
@@ -247,20 +281,352 @@ fun SettingsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsCard(
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null
     ) {
         Column(content = content)
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+@Composable
+fun SettingsScreen(
+    onLogoutSuccess: () -> Unit,
+    onProfileClick: () -> Unit,
+    onChildClick: () -> Unit,
+    isDarkTheme: Boolean,
+    onThemeChanged: (Boolean) -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+
+    // 🔹 New: get profile + child viewmodels
+    val profileViewModel: ProfileViewModel = hiltViewModel()
+    val profileState by profileViewModel.state.collectAsState()
+
+    val childViewModel: ChildProfileViewModel = hiltViewModel()
+    val childState by childViewModel.state.collectAsState()
+
+    // Load latest data when SettingsScreen enters composition
+    LaunchedEffect(Unit) {
+        profileViewModel.loadProfile()
+        childViewModel.loadChildProfile()
+    }
+
+    var notificationsEnabled by remember { mutableStateOf(true) }
+    val isLoggingOut = viewModel.isLoggingOut
+    val logoutError = viewModel.logoutError
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Text(
+            text = "Settings",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        // PROFILE
+        Text(
+            text = "PROFILE",
+            modifier = Modifier.padding(top = 8.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+
+        // 🔥 My Profile card now uses profileState
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clickable { onProfileClick() },
+            shape = MaterialTheme.shapes.large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "My Profile",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                    Text(
+                        text = if (profileState.name.isNotBlank()) profileState.name else "Rakesh Kumar",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Avatar (if you want to plug in real photoUrl)
+                if (profileState.imageUrl != null) {
+                    AsyncImage(
+                        model = profileState.imageUrl,
+                        contentDescription = "Profile photo",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // 🔥 Child Details card now uses childState
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clickable { onChildClick() },
+            shape = MaterialTheme.shapes.large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Child Details",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                    Text(
+                        text = childState.name.ifBlank { "Abhishek Verma" },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.PersonOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+
+
+        Spacer(Modifier.height(16.dp))
+
+        // APP SETTINGS
+        Text(
+            text = "APP SETTINGS",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+
+        SettingsCard {
+            SimpleListItem(
+                title = "Language / भाषा",
+                subtitle = "English",
+                trailing = {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            )
+        }
+
+        SettingsCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Notifications",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = if (notificationsEnabled) "Enabled" else "Disabled",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = notificationsEnabled,
+                    onCheckedChange = { notificationsEnabled = it },
+                    thumbContent = {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null
+                        )
+                    }
+                )
+            }
+        }
+
+        SettingsCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Dark Mode",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = if (isDarkTheme) "On" else "Off",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = isDarkTheme,
+                    onCheckedChange = { onThemeChanged(it) }
+                )
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // LOGOUT
+        SettingsCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = !isLoggingOut) {
+                        viewModel.onLogoutClick(onLogoutSuccess)
+                    }
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Logout",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                )
+
+                if (isLoggingOut) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            }
+        }
+
+        if (logoutError != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = logoutError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null
+    ) {
+        Column(content = content)
+    }
+}
+
+
+ */
 

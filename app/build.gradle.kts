@@ -58,7 +58,6 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.androidx.material3)
-    implementation(libs.firebase.storage.ktx)
 //    implementation(libs.firebase.firestore.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -70,10 +69,10 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
     // Firebase BOM (controls versions of all Firebase libraries)
-    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
 
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
     implementation(libs.firebase.storage)
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
