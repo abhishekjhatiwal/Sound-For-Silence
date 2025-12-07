@@ -13,7 +13,8 @@ import com.example.soundforsilence.presentation.category.CategoryScreen
 import com.example.soundforsilence.presentation.createaccount.CreateAccountScreen
 import com.example.soundforsilence.presentation.home.HomeScreen
 import com.example.soundforsilence.presentation.login.LoginScreen
-import com.example.soundforsilence.presentation.profile.ProfileScreen
+import com.example.soundforsilence.presentation.profile.child.ChildProfileScreen
+import com.example.soundforsilence.presentation.profile.parent.ProfileScreen
 import com.example.soundforsilence.presentation.progress.ProgressScreen
 import com.example.soundforsilence.presentation.setting.SettingsScreen
 import com.example.soundforsilence.presentation.video.VideoScreen
@@ -21,7 +22,9 @@ import com.example.soundforsilence.presentation.video.VideoScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    padding: PaddingValues
+    padding: PaddingValues,
+    isDarkTheme: Boolean,
+    onThemeChanged: (Boolean) -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -106,7 +109,7 @@ fun AppNavGraph(
             ProgressScreen()
         }
 
-// SETTINGS
+    // SETTINGS
         composable(Screen.Settings.route) {
             SettingsScreen(
                 onLogoutSuccess = {
@@ -117,13 +120,23 @@ fun AppNavGraph(
                 },
                 onProfileClick = {
                     navController.navigate(Screen.Profile.route)
-                }
+                },
+                onChildClick = { navController.navigate(Screen.ChildProfile.route) },
+                isDarkTheme = isDarkTheme,
+                onThemeChanged = onThemeChanged
             )
         }
 
-// PROFILE
+    // PROFILE
         composable(Screen.Profile.route) {   // ✅ use the sealed class route
             ProfileScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // Child Profile
+        composable(Screen.ChildProfile.route) {
+            ChildProfileScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

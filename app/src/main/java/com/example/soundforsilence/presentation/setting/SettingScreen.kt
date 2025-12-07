@@ -9,16 +9,23 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.soundforsilence.presentation.components.SimpleListItem
+import coil.compose.AsyncImage
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 
 @Composable
 fun SettingsScreen(
     onLogoutSuccess: () -> Unit,
     onProfileClick: () -> Unit,
+    onChildClick: () -> Unit,
+    isDarkTheme: Boolean,
+    onThemeChanged: (Boolean) -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
@@ -36,46 +43,72 @@ fun SettingsScreen(
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
         )
 
-        // 🔧 Debug helper: you can remove this later
-        Text(
-            text = "DEBUG: Tap here to go to profile",
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .clickable { onProfileClick() },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-
         Spacer(Modifier.height(16.dp))
 
         // PROFILE
         Text(
             text = "PROFILE",
-            modifier = Modifier
-                .padding(top = 8.dp),
+            modifier = Modifier.padding(top = 8.dp),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(8.dp))
 
-        SettingsCard(
-            onClick = onProfileClick      // ✅ call nav when card tapped
+        // 🔥 Completely custom clickable card for "My Profile"
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clickable { onProfileClick() },
+            shape = MaterialTheme.shapes.large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
-            SimpleListItem(
-                title = "My Profile",
-                subtitle = "Rakesh Kumar",
-                trailing = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "My Profile",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                    Text(
+                        text = "Rakesh Kumar", // later use real name from repo
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Avatar
+                if (/* you have state.profileImageUrl != null */ false) {
+                    AsyncImage(
+                        model = Icons.Default.Person /* state.profileImageUrl */,
+                        contentDescription = "Profile photo",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            )
+            }
         }
 
-
-        SettingsCard {
+        // Child details can still use SettingsCard + SimpleListItem
+        SettingsCard(
+            modifier = Modifier.clickable { onChildClick() }
+        ) {
             SimpleListItem(
                 title = "Child Details",
                 subtitle = "Abhishek Verma",
@@ -88,6 +121,7 @@ fun SettingsScreen(
                 }
             )
         }
+
 
         Spacer(Modifier.height(16.dp))
 
@@ -119,7 +153,7 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp, horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(
@@ -145,6 +179,34 @@ fun SettingsScreen(
             }
         }
 
+        SettingsCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Dark Mode",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                    Text(
+                        text = if (isDarkTheme) "On" else "Off",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = isDarkTheme,
+                    onCheckedChange = { onThemeChanged(it) }
+                )
+            }
+        }
+
         Spacer(Modifier.height(24.dp))
 
         // LOGOUT
@@ -157,7 +219,7 @@ fun SettingsScreen(
                     }
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "Logout",
@@ -185,39 +247,20 @@ fun SettingsScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsCard(
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        onClick = { onClick?.invoke() },           // ✅ Card click
-        enabled = onClick != null                  // Only clickable if we pass a lambda
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(content = content)
     }
 }
 
-
-//@Composable
-//private fun SettingsCard(
-//    content: @Composable ColumnScope.() -> Unit,
-//) {
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(vertical = 4.dp),
-//        shape = MaterialTheme.shapes.large,
-//        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-//    ) {
-//        Column(content = content)
-//    }
-//}
 

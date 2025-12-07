@@ -20,6 +20,9 @@ import com.example.soundforsilence.presentation.navigation.AppNavGraph
 import com.example.soundforsilence.ui.theme.SoundForSilenceTheme
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.soundforsilence.presentation.navigation.Screen
 
@@ -29,6 +32,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            var isDarkTheme by rememberSaveable { mutableStateOf(false) }
             SoundForSilenceTheme {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -52,7 +56,9 @@ class MainActivity : ComponentActivity() {
                 ) { padding ->
                     AppNavGraph(
                         navController = navController,
-                        padding = padding
+                        padding = padding,
+                        isDarkTheme = isDarkTheme,
+                        onThemeChanged = { isDarkTheme = it },
                     )
                 }
             }
