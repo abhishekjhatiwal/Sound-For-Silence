@@ -82,6 +82,7 @@ dependencies {
 
     // 🔹 Common KTX (for com.google.firebase.ktx.Firebase)
     implementation("com.google.firebase:firebase-common-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx:21.0.0")
 
     // If you use Firestore:
     implementation("com.google.firebase:firebase-firestore-ktx")
