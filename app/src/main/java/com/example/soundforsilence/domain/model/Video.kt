@@ -14,3 +14,11 @@ data class Video(
     val isCompleted: Boolean = false,
     val questions: List<Question> = emptyList()
 )
+
+data class VideoUiState(
+    val video: Video? = null,
+    val isLoading: Boolean = true,
+    val error: String? = null,
+    val currentPositionMs: Long = 0L,
+    val durationMs: Long = 0L
+)

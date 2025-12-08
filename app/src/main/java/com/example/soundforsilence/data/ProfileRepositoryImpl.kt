@@ -60,32 +60,15 @@ class ProfileRepositoryImpl @Inject constructor(
         return try {
             val uid = user.uid
 
-            // 1️⃣ Handle profile image upload if it's a local URI (content://...)
-            var finalImageUrl: String? = imageUrl
-
-            if (!imageUrl.isNullOrBlank() && imageUrl.startsWith("content://")) {
-                val uri = Uri.parse(imageUrl)
-
-                val storageRef = storage
-                    .reference
-                    .child("profileImages")
-                    .child("$uid.jpg")
-
-                // Upload file
-                storageRef.putFile(uri).await()
-                // Get download URL
-                finalImageUrl = storageRef.downloadUrl.await().toString()
-            }
-
-            // 2️⃣ Update Firestore (merge so we don’t lose other fields)
+            // Just store imageUrl as-is (or ignore it)
             val data = mutableMapOf<String, Any>(
                 "name" to name,
                 "phone" to phone,
                 "email" to email
             )
 
-            if (!finalImageUrl.isNullOrBlank()) {
-                data["imageUrl"] = finalImageUrl
+            if (!imageUrl.isNullOrBlank()) {
+                data["imageUrl"] = imageUrl   // expect a real URL in the future
             }
 
             firestore.collection("users")
@@ -93,12 +76,10 @@ class ProfileRepositoryImpl @Inject constructor(
                 .set(data, SetOptions.merge())
                 .await()
 
-            // 3️⃣ Update email in Firebase Auth if changed
             if (email.isNotBlank() && email != user.email) {
                 user.updateEmail(email).await()
             }
 
-            // 4️⃣ Update password in Auth if provided
             if (!newPassword.isNullOrBlank()) {
                 user.updatePassword(newPassword).await()
             }
@@ -108,6 +89,7 @@ class ProfileRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+
 
     override suspend fun reauthenticate(email: String, password: String): Result<Unit> {
         val user = currentUser() ?: return Result.failure(Exception("User not logged in"))
@@ -121,4 +103,102 @@ class ProfileRepositoryImpl @Inject constructor(
         }
     }
 }
+
+// Update Profile Code with Firebase Storage
+
+/*
+override suspend fun updateProfile(
+    name: String,
+    phone: String,
+    email: String,
+    newPassword: String?,
+    imageUrl: String?
+): Result<Unit> {
+    val user = currentUser() ?: return Result.failure(Exception("User not logged in"))
+
+    return try {
+        val uid = user.uid
+
+        // -----------------------------
+        // 1) Handle profile image upload
+        // -----------------------------
+        var finalImageUrl: String? = imageUrl
+
+        val data = mutableMapOf<String, Any>(
+            "name" to name,
+            "phone" to phone,
+            "email" to email
+        )
+
+        if (!imageUrl.isNullOrBlank()) {
+            data["imageUrl"] = imageUrl   // expect a real URL in the future
+        }
+
+        if (!imageUrl.isNullOrBlank() && imageUrl.startsWith("content://")) {
+            try {
+                val uri = Uri.parse(imageUrl)
+
+                val storageRef = storage
+                    .reference
+                    .child("profileImages")
+                    .child("$uid.jpg")
+
+                // Upload selected image
+                storageRef.putFile(uri).await()
+
+                // Get public download URL
+                finalImageUrl = storageRef.downloadUrl.await().toString()
+            } catch (e: Exception) {
+                // If upload fails, keep old image (do not break whole update)
+                return Result.failure(Exception("Failed to upload profile picture"))
+            }
+        }
+
+        // -----------------------------------
+        // 2) Update Firestore user document
+        // -----------------------------------
+//            val data = mutableMapOf<String, Any>(
+//                "name" to name,
+//                "phone" to phone,
+//                "email" to email
+//            )
+
+        if (!finalImageUrl.isNullOrBlank()) {
+            data["imageUrl"] = finalImageUrl
+        }
+
+        firestore.collection("users")
+            .document(uid)
+            .set(data, SetOptions.merge())
+            .await()
+
+        // -----------------------------------
+        // 3) Update email in Firebase Auth
+        // -----------------------------------
+        if (email.isNotBlank() && email != user.email) {
+            user.updateEmail(email).await()
+        }
+
+        // -----------------------------------
+        // 4) Update password in Firebase Auth
+        // -----------------------------------
+        if (!newPassword.isNullOrBlank()) {
+            user.updatePassword(newPassword).await()
+        }
+
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+}
+
+
+
+
+ */
+
+
+
+
+
 

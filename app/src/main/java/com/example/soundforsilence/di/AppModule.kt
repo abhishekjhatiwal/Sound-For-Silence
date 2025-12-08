@@ -3,11 +3,15 @@ package com.example.soundforsilence.di
 import com.example.soundforsilence.data.AssessmentRepositoryImpl
 import com.example.soundforsilence.data.AuthRepositoryImpl
 import com.example.soundforsilence.data.ProfileRepositoryImpl
+import com.example.soundforsilence.data.StreakRepositoryImpl
+import com.example.soundforsilence.data.VideoProgressRepositoryImpl
 import com.example.soundforsilence.data.VideoRepositoryImpl
 import com.example.soundforsilence.domain.repository.AssessmentRepository
 import com.example.soundforsilence.domain.repository.AuthRepository
 import com.example.soundforsilence.domain.repository.ChildProfileRepository
 import com.example.soundforsilence.domain.repository.ProfileRepository
+import com.example.soundforsilence.domain.repository.StreakRepository
+import com.example.soundforsilence.domain.repository.VideoProgressRepository
 import com.example.soundforsilence.domain.repository.VideoRepository
 import com.example.soundforsilence.domain.usecase.GetAssessmentsUseCase
 import com.example.soundforsilence.domain.usecase.GetCategoriesUseCase
@@ -64,10 +68,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideVideoRepository(): VideoRepository = VideoRepositoryImpl()
-
-    @Provides
-    @Singleton
     fun provideAssessmentRepository(): AssessmentRepository = AssessmentRepositoryImpl()
 
     @Provides
@@ -83,9 +83,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideChildProfileRepository(
-        auth: FirebaseAuth,
         db: DatabaseReference
-    ): ChildProfileRepository = ChildProfileRepository(auth, db)
+    ): ChildProfileRepository = ChildProfileRepository(db)
 
     // -------------------------------------------------
     // 🔹 Use cases
@@ -112,88 +111,24 @@ object AppModule {
     fun provideGetAssessmentsUseCase(
         assessmentRepository: AssessmentRepository
     ): GetAssessmentsUseCase = GetAssessmentsUseCase(assessmentRepository)
-}
-
-
-
-
-
-
-/*
-@Module
-@InstallIn(SingletonComponent::class)
-object AppModule {
 
     @Provides
     @Singleton
-    fun provideDatabaseReference(): DatabaseReference =
-        FirebaseDatabase.getInstance().reference
-
-    // Repositories
-    @Provides
-    @Singleton
-    fun provideAuthRepository(
-        firebaseAuth: FirebaseAuth,
-        db: DatabaseReference
-    ): AuthRepository = AuthRepositoryImpl(firebaseAuth, db)
-
+    fun provideVideoRepository(
+        firestore: FirebaseFirestore
+    ): VideoRepository = VideoRepositoryImpl(firestore)
 
     @Provides
     @Singleton
-    fun provideVideoRepository(): VideoRepository = VideoRepositoryImpl()
+    fun provideVideoProgressRepository(
+        firestore: FirebaseFirestore
+    ): VideoProgressRepository = VideoProgressRepositoryImpl(firestore)
 
     @Provides
     @Singleton
-    fun provideAssessmentRepository(): AssessmentRepository = AssessmentRepositoryImpl()
-
-    @Provides
-    @Singleton
-    fun provideProfileRepository(
-        auth: FirebaseAuth,
-        firestore: FirebaseFirestore,
-        storage: FirebaseStorage
-    ): ProfileRepository = ProfileRepositoryImpl(auth, firestore, storage)
-
-
-    @Provides
-    @Singleton
-    fun provideChildProfileRepository(
-        db: DatabaseReference
-    ): ChildProfileRepository = ChildProfileRepository(db)
-
-
-    // Use Cases
-    @Provides
-    fun provideLoginUseCase(authRepository: AuthRepository): LoginUseCase =
-        LoginUseCase(authRepository)
-
-    @Provides
-    fun provideGetCategoriesUseCase(videoRepository: VideoRepository): GetCategoriesUseCase =
-        GetCategoriesUseCase(videoRepository)
-
-    @Provides
-    fun provideGetVideosByCategoryUseCase(
-        videoRepository: VideoRepository
-    ): GetVideosByCategoryUseCase = GetVideosByCategoryUseCase(videoRepository)
-
-    @Provides
-    fun provideGetAssessmentsUseCase(
-        assessmentRepository: AssessmentRepository
-    ): GetAssessmentsUseCase = GetAssessmentsUseCase(assessmentRepository)
-
-    @Provides
-    fun provideRegisterUseCase(authRepository: AuthRepository): RegisterUseCase =
-        RegisterUseCase(authRepository)
-
-    @Provides
-    @Singleton
-    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
+    fun provideStreakRepository(
+        firestore: FirebaseFirestore
+    ): StreakRepository = StreakRepositoryImpl(firestore)
 
 }
 
-
- */

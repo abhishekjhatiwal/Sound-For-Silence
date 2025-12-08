@@ -88,6 +88,9 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-database")           //Realtimedatabase
 
+    //Push Notification
+    implementation("com.google.firebase:firebase-messaging-ktx:24.0.0") // or latest
+
     // If you use Storage for profile images:
     implementation("com.google.firebase:firebase-storage-ktx")
 

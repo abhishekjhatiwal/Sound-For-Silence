@@ -5,12 +5,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -40,8 +45,6 @@ fun HomeScreen(
     val categories by viewModel.categories.collectAsState()
     val profileState by profileViewModel.state.collectAsState()
     val childState by childViewModel.state.collectAsState()
-
-    // 👇 NEW: observe current logged-in user from AuthRepository
     val currentUser by viewModel.currentUser.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -49,22 +52,22 @@ fun HomeScreen(
         childViewModel.loadChildProfile()
     }
 
-    // 🔹 Parent name: prefer Auth user, then profileState, then fallback
+    // Parent name: Auth → profile → fallback
     val parentName = when {
         !currentUser?.name.isNullOrBlank() -> currentUser!!.name
         profileState.name.isNotBlank() -> profileState.name
-        else -> "Rakesh Kumar Ji"
+        else -> "Sunita Ji"
     }
 
-    // 🔹 Child name: prefer Auth user, then childState, then fallback
+    // Child name: Auth → child profile → fallback
     val childName = when {
         !currentUser?.childName.isNullOrBlank() -> currentUser!!.childName
         childState.name.isNotBlank() -> childState.name
-        else -> "Abhishek"
+        else -> "Ravi"
     }
 
     val trackingText = when (currentLanguage) {
-        AppLanguage.ENGLISH -> "Tracking $childName's progress"
+        AppLanguage.ENGLISH -> "Tracking $childName's Progress"
         AppLanguage.HINDI -> "$childName की प्रोग्रेस ट्रैक कर रहे हैं"
     }
 
@@ -79,14 +82,17 @@ fun HomeScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        // Small label (like section caption)
+        // “Welcome back,” line
         Text(
-            text = strings.homeTitle, // "Home" / "होम"
-            style = MaterialTheme.typography.labelLarge,
+            text = when (currentLanguage) {
+                AppLanguage.ENGLISH -> "Welcome back,"
+                AppLanguage.HINDI -> "वापसी पर स्वागत है,"
+            },
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        // ✅ Parent name from logged-in user
+        // Parent name
         Text(
             text = parentName,
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
@@ -94,16 +100,26 @@ fun HomeScreen(
 
         Spacer(Modifier.height(4.dp))
 
-        // ✅ Child tracking text with dynamic childName
-        Text(
-            text = trackingText,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        // Tracking child text + small icon
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.GraphicEq,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = trackingText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         Spacer(Modifier.height(20.dp))
 
-        // Quick stats row
+        // Quick stats row (VIDEOS / PROGRESS / DAY STREAK)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -140,15 +156,35 @@ fun HomeScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(categories) { category ->
-                CategoryCard(
-                    category = category,
-                    onClick = { onCategoryClick(category.id) }
+        if (categories.isEmpty()) {
+            // If Firestore has no categories yet
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = when (currentLanguage) {
+                        AppLanguage.ENGLISH -> "No learning stages available yet."
+                        AppLanguage.HINDI -> "अभी कोई लर्निंग स्टेज उपलब्ध नहीं है।"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(categories) { category ->
+                    CategoryCard(
+                        category = category,
+                        onClick = { onCategoryClick(category.id) }
+                    )
+                }
             }
         }
     }
@@ -171,24 +207,61 @@ private fun CategoryCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
-            Text(
-                category.name,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "${category.completedVideos} of ${category.totalVideos} videos completed",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left icon block (like the green rounded square in the design)
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.GraphicEq, // you can switch icon per category.icon
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
 
-            Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.width(12.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = category.name,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "${category.completedVideos} of ${category.totalVideos} videos completed",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Filled.ArrowForwardIos,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Progress bar
+            val progress =
+                if (category.totalVideos == 0) 0f
+                else category.completedVideos.toFloat() / category.totalVideos.toFloat()
 
             LinearProgressIndicator(
-                progress = category.progressPercentage / 100f,
+                progress = progress,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(6.dp)
