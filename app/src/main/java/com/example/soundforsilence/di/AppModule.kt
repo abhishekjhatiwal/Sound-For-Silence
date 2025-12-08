@@ -26,11 +26,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // Firebase instances
-    @Provides
-    @Singleton
-    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
-
     @Provides
     @Singleton
     fun provideDatabaseReference(): DatabaseReference =
@@ -86,72 +81,9 @@ object AppModule {
     @Provides
     fun provideRegisterUseCase(authRepository: AuthRepository): RegisterUseCase =
         RegisterUseCase(authRepository)
-}
-
-
-/*
-@Module
-@InstallIn(SingletonComponent::class)
-object AppModule {
-
-    // Repositories
-    @Provides
-    @Singleton
-    fun provideAuthRepository(): AuthRepository = AuthRepositoryImpl()
-
-    @Provides
-    @Singleton
-    fun provideVideoRepository(): VideoRepository = VideoRepositoryImpl()
-
-    @Provides
-    @Singleton
-    fun provideAssessmentRepository(): AssessmentRepository = AssessmentRepositoryImpl()
-
-    // Use Cases
-    @Provides
-    fun provideLoginUseCase(authRepository: AuthRepository): LoginUseCase =
-        LoginUseCase(authRepository)
-
-    @Provides
-    fun provideGetCategoriesUseCase(videoRepository: VideoRepository): GetCategoriesUseCase =
-        GetCategoriesUseCase(videoRepository)
-
-    @Provides
-    fun provideGetVideosByCategoryUseCase(
-        videoRepository: VideoRepository
-    ): GetVideosByCategoryUseCase = GetVideosByCategoryUseCase(videoRepository)
-
-    @Provides
-    fun provideGetAssessmentsUseCase(
-        assessmentRepository: AssessmentRepository
-    ): GetAssessmentsUseCase = GetAssessmentsUseCase(assessmentRepository)
-
-    @Provides
-    fun provideRegisterUseCase(authRepository: AuthRepository): RegisterUseCase =
-        RegisterUseCase(authRepository)
-
-    // e.g., AppModule.kt
-    @Provides
-    @Singleton
-    fun provideProfileRepository(): ProfileRepository = ProfileRepository()
-
-    @Provides
-    @Singleton
-    fun provideChildProfileRepository(
-        auth: FirebaseAuth,
-        db: DatabaseReference
-    ): ChildProfileRepository = ChildProfileRepository(auth, db)
 
     @Provides
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideDatabaseReference(): DatabaseReference =
-        FirebaseDatabase.getInstance().reference
-
 }
 
-
- */

@@ -5,25 +5,25 @@ import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
 
-    // Expose the current user as a Flow
     fun getCurrentUser(): Flow<User?>
-
-    // Convenience helpers we are using in ViewModels
     fun getCurrentUserId(): String?
     fun isUserLoggedIn(): Boolean
 
-    // Auth operations
-    suspend fun login(identifier: String, password: String): Result<User>
+    // email + password login
+    suspend fun login(email: String, password: String): Result<User>
 
+    // ✅ ADD email parameter here to match your implementation
     suspend fun register(
         name: String,
         phoneNumber: String,
         password: String,
-        childName: String
+        childName: String,
+        email: String
     ): Result<User>
 
     suspend fun logout(): Result<Unit>
 }
+
 
 
 
