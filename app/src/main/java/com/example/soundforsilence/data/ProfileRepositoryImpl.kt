@@ -1,53 +1,27 @@
-package com.example.soundforsilence.domain.repository
+package com.example.soundforsilence.data
 
+import android.net.Uri
 import com.example.soundforsilence.domain.model.ProfileState
+import com.example.soundforsilence.domain.repository.ProfileRepository
+import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.storage.FirebaseStorage
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.tasks.await
 
-interface ProfileRepository {
-
-    suspend fun getProfile(): Result<ProfileState>
-
-    suspend fun updateProfile(
-        name: String,
-        phone: String,
-        email: String,
-        newPassword: String?,
-        imageUrl: String?
-    ): Result<Unit>
-
-    suspend fun reauthenticate(email: String, password: String): Result<Unit>
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-class ProfileRepository {
-
-    private val auth = Firebase.auth
-    private val firestore = Firebase.firestore
+@Singleton
+class ProfileRepositoryImpl @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore,
+    private val storage: FirebaseStorage
+) : ProfileRepository {
 
     private fun currentUser() = auth.currentUser
 
-    suspend fun getProfile(): Result<ProfileState> {
+    override suspend fun getProfile(): Result<ProfileState> {
         val user = currentUser() ?: return Result.failure(Exception("User not logged in"))
 
         return try {
@@ -74,7 +48,7 @@ class ProfileRepository {
         }
     }
 
-    suspend fun updateProfile(
+    override suspend fun updateProfile(
         name: String,
         phone: String,
         email: String,
@@ -86,14 +60,32 @@ class ProfileRepository {
         return try {
             val uid = user.uid
 
-            // 1) Update Firestore (merge so we don’t lose other data)
+            // 1️⃣ Handle profile image upload if it's a local URI (content://...)
+            var finalImageUrl: String? = imageUrl
+
+            if (!imageUrl.isNullOrBlank() && imageUrl.startsWith("content://")) {
+                val uri = Uri.parse(imageUrl)
+
+                val storageRef = storage
+                    .reference
+                    .child("profileImages")
+                    .child("$uid.jpg")
+
+                // Upload file
+                storageRef.putFile(uri).await()
+                // Get download URL
+                finalImageUrl = storageRef.downloadUrl.await().toString()
+            }
+
+            // 2️⃣ Update Firestore (merge so we don’t lose other fields)
             val data = mutableMapOf<String, Any>(
                 "name" to name,
                 "phone" to phone,
                 "email" to email
             )
-            if (!imageUrl.isNullOrBlank()) {
-                data["imageUrl"] = imageUrl
+
+            if (!finalImageUrl.isNullOrBlank()) {
+                data["imageUrl"] = finalImageUrl
             }
 
             firestore.collection("users")
@@ -101,12 +93,12 @@ class ProfileRepository {
                 .set(data, SetOptions.merge())
                 .await()
 
-            // 2) Update email in Auth if changed
+            // 3️⃣ Update email in Firebase Auth if changed
             if (email.isNotBlank() && email != user.email) {
                 user.updateEmail(email).await()
             }
 
-            // 3) Update password in Auth if provided
+            // 4️⃣ Update password in Auth if provided
             if (!newPassword.isNullOrBlank()) {
                 user.updatePassword(newPassword).await()
             }
@@ -117,8 +109,9 @@ class ProfileRepository {
         }
     }
 
-    suspend fun reauthenticate(email: String, password: String): Result<Unit> {
+    override suspend fun reauthenticate(email: String, password: String): Result<Unit> {
         val user = currentUser() ?: return Result.failure(Exception("User not logged in"))
+
         return try {
             val credential = EmailAuthProvider.getCredential(email, password)
             user.reauthenticate(credential).await()
@@ -129,6 +122,3 @@ class ProfileRepository {
     }
 }
 
-
-
- */

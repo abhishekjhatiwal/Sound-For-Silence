@@ -4,16 +4,19 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.soundforsilence.domain.model.ProfileState
+import com.example.soundforsilence.domain.repository.AuthRepository
 import com.example.soundforsilence.domain.repository.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val repository: ProfileRepository
+    private val repository: ProfileRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProfileState())
@@ -93,6 +96,7 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = s.copy(loading = true, error = null, successMessage = null)
 
+            // 1️⃣ Update profile via your ProfileRepository (Firebase Auth / DB, etc.)
             val result = repository.updateProfile(
                 name = s.name,
                 phone = s.phone,
@@ -103,6 +107,23 @@ class ProfileViewModel @Inject constructor(
 
             _state.value = result.fold(
                 onSuccess = {
+                    // 2️⃣ Update AuthRepository's current user so Home / Settings update
+
+                    // Get current user once to preserve its existing childName
+                    val currentUser = try {
+                        authRepository.getCurrentUser().first()
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    val currentChildName = currentUser?.childName ?: ""
+
+                    // Update just name + (existing) childName in /users/{uid} and in-memory user
+                    authRepository.updateUserProfile(
+                        name = s.name,
+                        childName = currentChildName
+                    )
+
                     originalEmail = s.email
                     requireReauthForEmail = false
                     requireReauthForPassword = false
@@ -163,6 +184,7 @@ class ProfileViewModel @Inject constructor(
         _state.value = _state.value.copy(error = null, successMessage = null)
     }
 }
+
 
 
 

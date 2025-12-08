@@ -38,16 +38,20 @@ class LoginViewModel @Inject constructor(
 
     fun onLoginClick(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            // Basic validation
             if (identifier.isBlank() || password.isBlank()) {
-                errorMessage = "Please enter phone/email and password"
+                errorMessage = "Please enter email and password"
+                return@launch
+            }
+
+            // very basic email check
+            if (!identifier.contains("@")) {
+                errorMessage = "Please enter a valid email address"
                 return@launch
             }
 
             isLoading = true
             errorMessage = null
 
-            // identifier can be phone or email
             val result = loginUseCase(identifier.trim(), password)
             isLoading = false
 
@@ -56,4 +60,5 @@ class LoginViewModel @Inject constructor(
                 .onFailure { errorMessage = it.message ?: "Login failed" }
         }
     }
+
 }
