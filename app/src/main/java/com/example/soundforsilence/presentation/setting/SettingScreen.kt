@@ -39,13 +39,17 @@ fun SettingsScreen(
     // Localized strings
     val strings = stringsFor(currentLanguage)
 
-    // Profile + child VMs
+    // 🔹 Observe current logged in user from AuthRepository
+    val currentUser by viewModel.currentUser.collectAsState(initial = null)
+
+    // Profile + child VMs (still used for image + other details)
     val profileViewModel: ProfileViewModel = hiltViewModel()
     val profileState by profileViewModel.state.collectAsState()
 
     val childViewModel: ChildProfileViewModel = hiltViewModel()
     val childState by childViewModel.state.collectAsState()
 
+    // Load once when screen appears
     LaunchedEffect(Unit) {
         profileViewModel.loadProfile()
         childViewModel.loadChildProfile()
@@ -58,6 +62,19 @@ fun SettingsScreen(
     // 🌐 language dialog state
     var showLanguageDialog by remember { mutableStateOf(false) }
     var tempSelectedLanguage by remember { mutableStateOf(currentLanguage) }
+
+    // 🔹 Decide what to show for parent & child name:
+    val displayParentName = when {
+        !currentUser?.name.isNullOrBlank() -> currentUser!!.name
+        profileState.name.isNotBlank() -> profileState.name
+        else -> "Rakesh Kumar"
+    }
+
+    val displayChildName = when {
+        !currentUser?.childName.isNullOrBlank() -> currentUser!!.childName
+        childState.name.isNotBlank() -> childState.name
+        else -> "Abhishek Verma"
+    }
 
     Column(
         modifier = Modifier
@@ -100,10 +117,7 @@ fun SettingsScreen(
                         )
                     )
                     Text(
-                        text = if (profileState.name.isNotBlank())
-                            profileState.name
-                        else
-                            "Rakesh Kumar",
+                        text = displayParentName,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -145,10 +159,7 @@ fun SettingsScreen(
                         )
                     )
                     Text(
-                        text = if (childState.name.isNotBlank())
-                            childState.name
-                        else
-                            "Abhishek Verma",
+                        text = displayChildName,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
