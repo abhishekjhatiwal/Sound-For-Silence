@@ -41,13 +41,27 @@ fun HomeScreen(
     val profileState by profileViewModel.state.collectAsState()
     val childState by childViewModel.state.collectAsState()
 
+    // 👇 NEW: observe current logged-in user from AuthRepository
+    val currentUser by viewModel.currentUser.collectAsState()
+
     LaunchedEffect(Unit) {
         profileViewModel.loadProfile()
         childViewModel.loadChildProfile()
     }
 
-    val parentName = if (profileState.name.isNotBlank()) profileState.name else "Rakesh Kumar Ji"
-    val childName = if (childState.name.isNotBlank()) childState.name else "Abhishek"
+    // 🔹 Parent name: prefer Auth user, then profileState, then fallback
+    val parentName = when {
+        !currentUser?.name.isNullOrBlank() -> currentUser!!.name
+        profileState.name.isNotBlank() -> profileState.name
+        else -> "Rakesh Kumar Ji"
+    }
+
+    // 🔹 Child name: prefer Auth user, then childState, then fallback
+    val childName = when {
+        !currentUser?.childName.isNullOrBlank() -> currentUser!!.childName
+        childState.name.isNotBlank() -> childState.name
+        else -> "Abhishek"
+    }
 
     val trackingText = when (currentLanguage) {
         AppLanguage.ENGLISH -> "Tracking $childName's progress"
@@ -72,7 +86,7 @@ fun HomeScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        // Parent name
+        // ✅ Parent name from logged-in user
         Text(
             text = parentName,
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
@@ -80,7 +94,7 @@ fun HomeScreen(
 
         Spacer(Modifier.height(4.dp))
 
-        // Child tracking text
+        // ✅ Child tracking text with dynamic childName
         Text(
             text = trackingText,
             style = MaterialTheme.typography.bodyMedium,
@@ -183,6 +197,7 @@ private fun CategoryCard(
         }
     }
 }
+
 
 
 

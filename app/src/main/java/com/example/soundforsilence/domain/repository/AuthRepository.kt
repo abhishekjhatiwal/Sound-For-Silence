@@ -21,6 +21,12 @@ interface AuthRepository {
         email: String
     ): Result<User>
 
+    // 👇 NEW: update name & childName
+    suspend fun updateUserProfile(
+        name: String,
+        childName: String
+    ): Result<Unit>
+
     suspend fun logout(): Result<Unit>
 }
 

@@ -158,6 +158,41 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateUserProfile(
+        name: String,
+        childName: String
+    ): Result<Unit> {
+        val uid = firebaseAuth.currentUser?.uid
+            ?: return Result.failure(Exception("User not logged in"))
+
+        return try {
+            // 1) Update in Realtime Database
+            val updates = mapOf(
+                "name" to name,
+                "childName" to childName
+            )
+
+            db.child("users")
+                .child(uid)
+                .updateChildren(updates)
+                .await()
+
+            // 2) Update in in-memory currentUserFlow so UI updates immediately
+            val current = currentUserFlow.value
+            if (current != null) {
+                currentUserFlow.value = current.copy(
+                    name = name,
+                    childName = childName
+                )
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
     override suspend fun logout(): Result<Unit> {
         return try {
             firebaseAuth.signOut()
