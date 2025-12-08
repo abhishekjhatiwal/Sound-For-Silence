@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.soundforsilence.domain.model.ChildProfile
 import com.example.soundforsilence.domain.model.ChildProfileState
+import com.example.soundforsilence.domain.repository.AuthRepository
 import com.example.soundforsilence.domain.repository.ChildProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChildProfileViewModel @Inject constructor(
-    private val repository: ChildProfileRepository
+    private val repository: ChildProfileRepository,
+    private val authRepository: AuthRepository    // ✅ inject auth
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChildProfileState())
@@ -25,7 +27,20 @@ class ChildProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null, successMessage = null) }
 
-            val result = repository.getChildProfile()
+            // ✅ Check logged-in user
+            val userId = authRepository.getCurrentUserId()
+            if (userId == null) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        error = "User not logged in"
+                    )
+                }
+                return@launch
+            }
+
+            // ✅ Pass userId to repository
+            val result = repository.getChildProfile(userId)
 
             result
                 .onSuccess { profile: ChildProfile ->
@@ -67,13 +82,26 @@ class ChildProfileViewModel @Inject constructor(
 
             _state.update { it.copy(loading = true, error = null, successMessage = null) }
 
+            // ✅ Check logged-in user
+            val userId = authRepository.getCurrentUserId()
+            if (userId == null) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        error = "User not logged in"
+                    )
+                }
+                return@launch
+            }
+
             val profile = ChildProfile(
                 name = current.name,
                 age = current.age,
                 notes = current.notes
             )
 
-            val result = repository.saveChildProfile(profile)
+            // ✅ Pass userId to repository
+            val result = repository.saveChildProfile(userId, profile)
 
             result
                 .onSuccess {
@@ -99,6 +127,13 @@ class ChildProfileViewModel @Inject constructor(
         _state.update { it.copy(error = null, successMessage = null) }
     }
 }
+
+
+
+
+
+
+
 
 
 
@@ -221,23 +256,3 @@ class ChildProfileViewModel @Inject constructor(
 
 
  */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
