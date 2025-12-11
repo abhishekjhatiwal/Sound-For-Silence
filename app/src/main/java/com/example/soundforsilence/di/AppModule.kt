@@ -18,6 +18,7 @@ import com.example.soundforsilence.domain.usecase.GetCategoriesUseCase
 import com.example.soundforsilence.domain.usecase.GetVideosByCategoryUseCase
 import com.example.soundforsilence.domain.usecase.LoginUseCase
 import com.example.soundforsilence.domain.usecase.RegisterUseCase
+import com.example.soundforsilence.util.NetworkUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase

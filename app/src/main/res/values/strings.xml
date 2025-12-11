@@ -67,4 +67,11 @@
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
     <string name="continue_text">Continue</string>
+
+    <style name="Theme.SoundForSilence.NoActionBar" parent="Theme.SoundForSilence">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
 </resources>

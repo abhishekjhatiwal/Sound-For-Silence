@@ -94,3 +94,4 @@ class VideoProgressRepositoryImpl @Inject constructor(
         }
     }
 }
+
