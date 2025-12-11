@@ -10,7 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -26,10 +26,18 @@ fun LoginScreen(
     onCreateAccountClick: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    val identifier = viewModel.identifier   // <- phone or email
+    val identifier = viewModel.identifier
     val password = viewModel.password
     val loading = viewModel.isLoading
     val error = viewModel.errorMessage
+    val isAuthenticated = viewModel.isAuthenticated
+
+    // 🔥 Auto-navigate when user already signed in
+    LaunchedEffect(isAuthenticated) {
+        if (isAuthenticated) {
+            onLoginSuccess()
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -95,7 +103,6 @@ fun LoginScreen(
                     placeholder = { Text("Phone Number or Email ID") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        // Accepts both emails and numbers fine
                         keyboardType = KeyboardType.Email
                     ),
                     shape = RoundedCornerShape(24.dp),
