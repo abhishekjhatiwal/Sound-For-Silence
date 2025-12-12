@@ -1,5 +1,8 @@
 package com.example.soundforsilence.presentation.video
 
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +12,7 @@ import com.example.soundforsilence.domain.repository.AuthRepository
 import com.example.soundforsilence.domain.repository.VideoProgressRepository
 import com.example.soundforsilence.domain.repository.VideoRepository
 import com.example.soundforsilence.util.NetworkUtils
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -49,6 +53,16 @@ class VideoViewModel @Inject constructor(
     private var accumulatedWatchMs: Long = 0L
 
     init {
+        // Log current auth / project info for debugging (safe: not sensitive)
+        try {
+            val fbAuth = FirebaseAuth.getInstance()
+            val uid = fbAuth.currentUser?.uid
+            val projectId = FirebaseFirestore.getInstance().app.options.projectId
+            Log.d("DBG_FIRE", "currentUser.uid = $uid  | projectId = $projectId")
+        } catch (t: Throwable) {
+            Log.w("DBG_FIRE", "unable to log firebase info", t)
+        }
+
         observeVideo()
     }
 
@@ -85,9 +99,15 @@ class VideoViewModel @Inject constructor(
         _uiState.update { it.copy(error = message) }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCleared() {
         // ensure last position & stats are saved when ViewModel is destroyed
-        saveOnPause()
+        // fire-and-forget because ViewModel is being cleared
+        try {
+            saveOnPause()
+        } catch (t: Throwable) {
+            Log.w("VideoViewModel", "saveOnPause failed in onCleared", t)
+        }
         super.onCleared()
     }
 
@@ -95,15 +115,24 @@ class VideoViewModel @Inject constructor(
      * Public helper: immediately persist the current UI position/duration to backend.
      * Safe to call from Activity.onPause(), player pause, or Compose lifecycle observer.
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     fun saveOnPause() {
         viewModelScope.launch {
-            // capture current state snapshot
             val state = _uiState.value
             val video = state.video ?: return@launch
             val position = state.currentPositionMs
             val duration = state.durationMs.takeIf { it > 0 } ?: 0L
 
-            // build VideoProgress
+            val userId = authRepository.getCurrentUserId()
+            Log.d(
+                "VideoViewModel",
+                "saveOnPause -> currentUserId = $userId, video=${video.id}, pos=$position"
+            )
+            if (userId == null) {
+                _uiState.update { it.copy(error = "Not signed in — progress not saved") }
+                return@launch
+            }
+
             val progress = VideoProgress(
                 videoId = video.id,
                 categoryId = video.categoryId,
@@ -114,10 +143,8 @@ class VideoViewModel @Inject constructor(
             )
 
             try {
-                val userId = authRepository.getCurrentUserId() ?: return@launch
                 val res = videoProgressRepository.saveProgress(userId, progress)
                 if (res.isFailure) {
-                    // non-fatal, surface to UI if you want
                     _uiState.update {
                         it.copy(
                             error = res.exceptionOrNull()?.message
@@ -125,21 +152,21 @@ class VideoViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    // update throttle trackers so subsequent auto-saves don't immediately re-write
                     lastSavedAtMs = System.currentTimeMillis()
                     lastSavedProgressPercent =
                         if (duration > 0) ((position.toDouble() / duration) * 100).toInt()
                             .coerceIn(0, 100) else lastSavedProgressPercent
                 }
             } catch (e: Exception) {
+                Log.e("VideoViewModel", "saveOnPause error", e)
                 _uiState.update { it.copy(error = e.message ?: "Failed to save progress on pause") }
             }
 
-            // persist accumulated watch-time/streaks
+            // persist accumulated watch-time
             try {
                 persistWatchStatsIfNeeded()
-            } catch (_: Exception) {
-                // non-fatal
+            } catch (e: Exception) {
+                Log.w("VideoViewModel", "persistWatchStatsIfNeeded failed", e)
             }
         }
     }
@@ -178,7 +205,11 @@ class VideoViewModel @Inject constructor(
 
         // Persist VideoProgress (real ms values)
         viewModelScope.launch {
-            val userId = authRepository.getCurrentUserId() ?: return@launch
+            val userId = authRepository.getCurrentUserId() ?: run {
+                Log.w("VideoViewModel", "onPositionChanged: no signed-in user")
+                return@launch
+            }
+
             val progress = VideoProgress(
                 videoId = video.id,
                 categoryId = video.categoryId,
@@ -202,6 +233,7 @@ class VideoViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                Log.e("VideoViewModel", "onPositionChanged save failed", e)
                 _uiState.update { it.copy(error = e.message ?: "Failed to save progress") }
             }
         }
@@ -210,10 +242,20 @@ class VideoViewModel @Inject constructor(
     /**
      * Called when playback ends — writes final progress with position=duration and completed=true.
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     fun onPlaybackCompleted() {
         val video = _uiState.value.video ?: return
         viewModelScope.launch {
-            val userId = authRepository.getCurrentUserId() ?: return@launch
+            val userId = authRepository.getCurrentUserId()
+            Log.d(
+                "VideoViewModel",
+                "onPlaybackCompleted -> currentUserId = $userId, video=${video.id}"
+            )
+            if (userId == null) {
+                _uiState.update { it.copy(error = "Not signed in — cannot mark complete") }
+                return@launch
+            }
+
             val duration = _uiState.value.durationMs
             val progress = VideoProgress(
                 videoId = video.id,
@@ -236,13 +278,16 @@ class VideoViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                Log.e("VideoViewModel", "onPlaybackCompleted error", e)
                 _uiState.update { it.copy(error = e.message ?: "Failed to mark completed") }
             }
 
-            // also flush watch stats immediately
+            // flush watch stats
             try {
                 persistWatchStatsIfNeeded()
-            } catch (_: Exception) { /* ignore */ }
+            } catch (e: Exception) {
+                Log.w("VideoViewModel", "persistWatchStatsIfNeeded failed", e)
+            }
         }
     }
 
@@ -279,12 +324,17 @@ class VideoViewModel @Inject constructor(
     }
 
     // called on pause / onCleared
+    @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun persistWatchStatsIfNeeded() {
-        val uid = authRepository.getCurrentUserId() ?: return
+        val uid = authRepository.getCurrentUserId() ?: run {
+            Log.w("VideoViewModel", "persistWatchStatsIfNeeded: no signed-in user")
+            return
+        }
         if (accumulatedWatchMs <= 0) return
 
         val firestore = FirebaseFirestore.getInstance()
-        val statRef = firestore.collection("users").document(uid).collection("meta").document("stats")
+        val statRef =
+            firestore.collection("users").document(uid).collection("meta").document("stats")
 
         // read existing values and update in a transaction
         try {
@@ -309,8 +359,9 @@ class VideoViewModel @Inject constructor(
             }.await()
             accumulatedWatchMs = 0L
         } catch (e: Exception) {
-            // surface to UI optionally
+            Log.e("VideoViewModel", "persistWatchStatsIfNeeded failed", e)
             _uiState.update { it.copy(error = e.message ?: "Failed to save watch stats") }
         }
     }
 }
+
