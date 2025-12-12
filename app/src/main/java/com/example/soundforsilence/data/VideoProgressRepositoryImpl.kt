@@ -1,5 +1,6 @@
 package com.example.soundforsilence.data
 
+import android.util.Log
 import com.example.soundforsilence.domain.model.VideoProgress
 import com.example.soundforsilence.domain.repository.VideoProgressRepository
 import com.google.firebase.firestore.FirebaseFirestore
@@ -17,7 +18,7 @@ class VideoProgressRepositoryImpl @Inject constructor(
         userId: String,
         progress: VideoProgress
     ): Result<Unit> {
-        return try {
+        try {
             val data = mapOf(
                 "videoId" to progress.videoId,
                 "categoryId" to progress.categoryId,
@@ -34,11 +35,49 @@ class VideoProgressRepositoryImpl @Inject constructor(
                 .set(data, SetOptions.merge())
                 .await()
 
-            Result.success(Unit)
+            return Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            // Detailed logging for diagnosing PERMISSION_DENIED
+            android.util.Log.e(
+                "DBG_FIRE_SAVE",
+                "saveProgress failed: userId=$userId videoId=${progress.videoId} progress=$progress",
+                e
+            )
+            return Result.failure(e)
         }
     }
+
+//    override suspend fun saveProgress(
+//        userId: String,
+//        progress: VideoProgress
+//    ): Result<Unit> {
+//        return try {
+//            val data = mapOf(
+//                "videoId" to progress.videoId,
+//                "categoryId" to progress.categoryId,
+//                "positionMs" to progress.positionMs,
+//                "durationMs" to progress.durationMs,
+//                "completed" to progress.completed,
+//                "updatedAt" to progress.updatedAt
+//            )
+//
+//            firestore.collection("users")
+//                .document(userId)
+//                .collection("videoProgress")
+//                .document(progress.videoId)
+//                .set(data, SetOptions.merge())
+//                .await()
+//
+//            Result.success(Unit)
+//        } catch (e: Exception) {
+//            Log.e(
+//                "DBG_FIRE_SAVE",
+//                "saveProgress failed userId=$userId progress=${progress.videoId}",
+//                e
+//            )
+//            return Result.failure(e)
+//        }
+//    }
 
     override suspend fun getProgressForVideo(
         userId: String,
@@ -68,6 +107,16 @@ class VideoProgressRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+
+//    override suspend fun saveProgress(userId: String, progress: VideoProgress): Result<Unit> {
+//        try {
+//            // same write
+//        } catch (e: Exception) {
+//            Log.e("DBG_FIRE_SAVE", "saveProgress failed userId=$userId progress=${progress.videoId}", e)
+//            return Result.failure(e)
+//        }
+//    }
+
 
     override suspend fun getProgressForUser(userId: String): Result<List<VideoProgress>> {
         return try {

@@ -252,7 +252,7 @@ fun SettingsScreen(
                 )
             }
         }
-
+/*
         // Dark Mode
         SettingsCard {
             Row(
@@ -279,7 +279,7 @@ fun SettingsScreen(
                 )
             }
         }
-
+*/
         Spacer(Modifier.height(24.dp))
 
         // LOGOUT
