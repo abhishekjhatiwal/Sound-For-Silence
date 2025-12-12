@@ -76,10 +76,14 @@ fun AppNavGraph(
                     navController.navigate(Screen.Settings.route)
                 },
                 onVideosClick = {
-                    navController.navigate(Screen.Video.createRoute("someVideoId")) // adjust if needed
+                    navController.navigate(Screen.Video.createRoute("someVideoId"))
+                },
+                onResumeVideo = { videoId ->
+                    navController.navigate(Screen.Video.createRoute(videoId))
                 }
             )
         }
+
 
         // CATEGORY (videos list for a stage)
         composable(
@@ -150,12 +154,6 @@ fun AppNavGraph(
         }
     }
 }
-
-
-
-
-
-
 
 
 /*

@@ -16,13 +16,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
@@ -39,48 +33,48 @@ class VideoViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val videoId: String = checkNotNull(savedStateHandle["videoId"])
+
     private val _uiState = MutableStateFlow(VideoUiState())
     val uiState: StateFlow<VideoUiState> = _uiState.asStateFlow()
-    private fun currentAuthUid(): String? = FirebaseAuth.getInstance().currentUser?.uid
 
-    // Throttle state for writes
-    private var lastSavedProgressPercent: Int = -1
-    private var lastSavedAtMs: Long = 0L
+    // Progress throttling
+    private var lastSavedProgressPercent = -1
+    private var lastSavedAtMs = 0L
     private val saveThrottleMs = 10_000L
     private val minDeltaToSavePercent = 5
 
     // Watch-time tracking
-    private var lastPositionSnapshot: Long = 0L
-    private var accumulatedWatchMs: Long = 0L
+    private var lastPositionSnapshot = 0L
+    private var accumulatedWatchMs = 0L
 
     init {
-        // Log current auth / project info for debugging (safe: not sensitive)
-        try {
-            val fbAuth = FirebaseAuth.getInstance()
-            val uid = fbAuth.currentUser?.uid
-            val projectId = FirebaseFirestore.getInstance().app.options.projectId
-            Log.d("DBG_FIRE", "currentUser.uid = $uid  | projectId = $projectId")
-        } catch (t: Throwable) {
-            Log.w("DBG_FIRE", "unable to log firebase info", t)
-        }
-
-        observeVideo()
+        debugAuth()
+        observeVideoRealTime()
     }
 
-    private fun firebaseUidOrNull(): String? = FirebaseAuth.getInstance().currentUser?.uid
+    private fun debugAuth() {
+        try {
+            val u = FirebaseAuth.getInstance().currentUser
+            val pid = FirebaseFirestore.getInstance().app.options.projectId
+            Log.d("DBG_FIRE", "uid=${u?.uid} projectId=$pid")
+        } catch (_: Throwable) { }
+    }
 
-    private fun observeVideo() {
+    private fun firebaseUidOrNull(): String? =
+        FirebaseAuth.getInstance().currentUser?.uid
+
+    /**
+     * 🔄 Real-time listener — used as fallback for updates.
+     */
+    private fun observeVideoRealTime() {
         videoRepository.getVideoById(videoId)
             .onEach { vid ->
+                if (vid == null) return@onEach
+
                 _uiState.update { it.copy(video = vid, isLoading = false, error = null) }
 
-                // Optionally validate reachability once
-                vid?.videoUrl?.takeIf { it.isNotBlank() }?.let { url ->
-                    viewModelScope.launch {
-                        val reachable =
-                            withContext(Dispatchers.IO) { networkUtils.isUrlReachable(url) }
-                        if (!reachable) _uiState.update { it.copy(error = "Video URL unreachable or expired") }
-                    }
+                if (vid.videoUrl.isNotBlank()) {
+                    validateUrlOnce(vid.videoUrl)
                 }
             }
             .catch { e ->
@@ -94,230 +88,155 @@ class VideoViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    private fun validateUrlOnce(url: String) {
+        viewModelScope.launch {
+            val isReachable = withContext(Dispatchers.IO) {
+                networkUtils.isUrlReachable(url)
+            }
+            if (!isReachable) {
+                _uiState.update { it.copy(error = "Video URL unreachable or expired") }
+            }
+        }
+    }
+
+    /**
+     * 🔁 Called by "Continue watching" → loads single doc immediately
+     */
+    fun reloadVideo() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            try {
+                val vid = videoRepository.getVideoOnce(videoId)
+                if (vid == null) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = "Video not found"
+                        )
+                    }
+                    return@launch
+                }
+
+                Log.d("VIDEO_VM", "reloadVideo(): ${vid.id} url=${vid.videoUrl}")
+
+                _uiState.update {
+                    it.copy(video = vid, isLoading = false, error = null)
+                }
+
+                if (vid.videoUrl.isNotBlank()) validateUrlOnce(vid.videoUrl)
+
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to reload video"
+                    )
+                }
+            }
+        }
+    }
+
     fun onPlayerReady(durationMs: Long) {
         _uiState.update { it.copy(durationMs = durationMs) }
     }
 
-    fun onPlayerError(message: String) {
-        _uiState.update { it.copy(error = message) }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun onCleared() {
-        // ensure last position & stats are saved when ViewModel is destroyed
-        // fire-and-forget because ViewModel is being cleared
-        try {
-            saveOnPause()
-        } catch (t: Throwable) {
-            Log.w("VideoViewModel", "saveOnPause failed in onCleared", t)
-        }
-        super.onCleared()
-    }
-
-    private fun dbgAuthInfo(tag: String = "DBG_FIRE") {
-        val fbUser = FirebaseAuth.getInstance().currentUser
-        Log.d(tag, "FirebaseAuth.currentUser = $fbUser")
-        Log.d(tag, "FirebaseAuth.uid = ${fbUser?.uid}")
-        Log.d(tag, "AuthRepository.getCurrentUserId() = ${authRepository.getCurrentUserId()}")
-        Log.d(tag, "projectId = ${FirebaseFirestore.getInstance().app.options.projectId}")
-    }
-    /**
-     * Public helper: immediately persist the current UI position/duration to backend.
-     * Safe to call from Activity.onPause(), player pause, or Compose lifecycle observer.
-     */
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun saveOnPause() {
-        viewModelScope.launch {
-            val state = _uiState.value
-            val video = state.video ?: return@launch
-            val position = state.currentPositionMs
-            val duration = state.durationMs.takeIf { it > 0 } ?: 0L
-
-            // prefer authRepository, fallback to FirebaseAuth directly (diagnostic + robust)
-            val repoUid = authRepository.getCurrentUserId()
-            val fbUid = firebaseUidOrNull()
-            val targetUserId = repoUid ?: fbUid
-
-            Log.d(
-                "VideoVM",
-                "saveOnPause -> repoUid=$repoUid fbUid=$fbUid targetUserId=$targetUserId videoId=${video.id} pos=$position dur=$duration"
-            )
-
-            if (targetUserId == null) {
-                _uiState.update { it.copy(error = "Not signed in — progress not saved") }
-                return@launch
-            }
-
-            val progress = VideoProgress(
-                videoId = video.id,
-                categoryId = video.categoryId,
-                positionMs = position,
-                durationMs = duration,
-                completed = (duration > 0 && position >= duration),
-                updatedAt = System.currentTimeMillis()
-            )
-
-            try {
-                val res = videoProgressRepository.saveProgress(targetUserId, progress)
-                if (res.isSuccess) {
-                    lastSavedAtMs = System.currentTimeMillis()
-                    lastSavedProgressPercent =
-                        if (duration > 0) ((position.toDouble() / duration) * 100).toInt()
-                            .coerceIn(0, 100) else lastSavedProgressPercent
-                } else {
-                    Log.w("VideoVM", "saveProgress failed: ${res.exceptionOrNull()}")
-                    _uiState.update {
-                        it.copy(
-                            error = res.exceptionOrNull()?.message ?: "Failed to save progress"
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("VideoVM", "saveOnPause exception", e)
-                _uiState.update { it.copy(error = e.message ?: "Failed to save progress on pause") }
-            }
-
-            try {
-                persistWatchStatsIfNeeded()
-            } catch (e: Exception) {
-                Log.w("VideoVM", "persist stats failed", e)
-            }
-        }
+    fun onPlayerError(msg: String) {
+        _uiState.update { it.copy(error = msg) }
     }
 
     /**
-     * Called frequently (player -> every 1s). Updates UI immediately.
-     * Persists via VideoProgressRepository.saveProgress with (positionMs, durationMs).
-     * Also tracks accumulated watch time.
+     * 🟦 Called every ~1s by VideoPlayer
      */
     fun onPositionChanged(positionMs: Long) {
         _uiState.update { it.copy(currentPositionMs = positionMs) }
 
-        // accumulate watch time (sanity check)
+        // accumulate real watch time
         val delta = positionMs - lastPositionSnapshot
-        if (delta > 0 && delta < 60_000) { // only count reasonable increments
-            accumulatedWatchMs += delta
-        }
+        if (delta > 0 && delta < 60_000) accumulatedWatchMs += delta
         lastPositionSnapshot = positionMs
 
         val state = _uiState.value
         val video = state.video ?: return
         val duration = state.durationMs.takeIf { it > 0 } ?: return
 
-        val progressPercent = ((positionMs.toDouble() / duration) * 100).toInt().coerceIn(0, 100)
+        val pct = ((positionMs.toDouble() / duration) * 100).toInt().coerceIn(0, 100)
         val now = System.currentTimeMillis()
 
         val shouldSave = when {
-            progressPercent >= 100 -> true // always persist completion
-            lastSavedProgressPercent < 0 -> true // first save
-            (now - lastSavedAtMs) >= saveThrottleMs -> true
-            abs(progressPercent - lastSavedProgressPercent) >= minDeltaToSavePercent -> true
+            pct >= 100 -> true
+            lastSavedProgressPercent < 0 -> true
+            now - lastSavedAtMs >= saveThrottleMs -> true
+            abs(pct - lastSavedProgressPercent) >= minDeltaToSavePercent -> true
             else -> false
         }
-
         if (!shouldSave) return
 
-        // Persist VideoProgress (real ms values)
         viewModelScope.launch {
-            val userId = authRepository.getCurrentUserId() ?: run {
-                Log.w("VideoViewModel", "onPositionChanged: no signed-in user")
-                return@launch
-            }
+            val uid = authRepository.getCurrentUserId() ?: return@launch
 
             val progress = VideoProgress(
                 videoId = video.id,
                 categoryId = video.categoryId,
                 positionMs = positionMs,
                 durationMs = duration,
-                completed = progressPercent >= 100,
+                completed = pct >= 100,
                 updatedAt = System.currentTimeMillis()
             )
 
-            try {
-                val res = videoProgressRepository.saveProgress(userId, progress)
-                if (res.isSuccess) {
-                    lastSavedProgressPercent = progressPercent
-                    lastSavedAtMs = System.currentTimeMillis()
-                } else {
-                    // store non-fatal error in UI
-                    _uiState.update {
-                        it.copy(
-                            error = res.exceptionOrNull()?.message ?: "Failed to save progress"
-                        )
-                    }
+            val result = videoProgressRepository.saveProgress(uid, progress)
+            if (result.isSuccess) {
+                lastSavedProgressPercent = pct
+                lastSavedAtMs = now
+            } else {
+                _uiState.update {
+                    it.copy(error = result.exceptionOrNull()?.message ?: "Failed to save progress")
                 }
-            } catch (e: Exception) {
-                Log.e("VideoViewModel", "onPositionChanged save failed", e)
-                _uiState.update { it.copy(error = e.message ?: "Failed to save progress") }
             }
         }
     }
 
     /**
-     * Called when playback ends — writes final progress with position=duration and completed=true.
+     * ▶️ Playback completed → persist as complete
      */
     @RequiresApi(Build.VERSION_CODES.O)
     fun onPlaybackCompleted() {
         val video = _uiState.value.video ?: return
         viewModelScope.launch {
-            val repoUid = authRepository.getCurrentUserId()
-            val fbUid = firebaseUidOrNull()
-            val targetUserId = repoUid ?: fbUid
+            val userId = authRepository.getCurrentUserId() ?: return@launch
 
-            Log.d(
-                "VideoVM",
-                "onPlaybackCompleted -> repoUid=$repoUid fbUid=$fbUid targetUserId=$targetUserId videoId=${video.id}"
-            )
-
-            if (targetUserId == null) {
-                _uiState.update { it.copy(error = "Not signed in — cannot mark complete") }
-                return@launch
-            }
-
-            val duration = _uiState.value.durationMs
+            val dur = _uiState.value.durationMs
             val progress = VideoProgress(
                 videoId = video.id,
                 categoryId = video.categoryId,
-                positionMs = duration,
-                durationMs = duration,
+                positionMs = dur,
+                durationMs = dur,
                 completed = true,
                 updatedAt = System.currentTimeMillis()
             )
 
-            try {
-                val res = videoProgressRepository.saveProgress(targetUserId, progress)
-                if (res.isSuccess) _uiState.update { it.copy(currentPositionMs = duration) }
-                else {
-                    Log.w("VideoVM", "markCompleted failed: ${res.exceptionOrNull()}")
-                    _uiState.update {
-                        it.copy(
-                            error = res.exceptionOrNull()?.message ?: "Failed to mark completed"
-                        )
-                    }
+            val res = videoProgressRepository.saveProgress(userId, progress)
+            if (res.isSuccess) {
+                _uiState.update { it.copy(currentPositionMs = dur) }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        error = res.exceptionOrNull()?.message ?: "Failed to mark completed"
+                    )
                 }
-            } catch (e: Exception) {
-                Log.e("VideoVM", "onPlaybackCompleted exception", e)
-                _uiState.update { it.copy(error = e.message ?: "Failed to mark completed") }
             }
 
-            try {
-                persistWatchStatsIfNeeded()
-            } catch (e: Exception) {
-                Log.w("VideoVM", "persist stats failed", e)
-            }
+            persistWatchStatsIfNeeded()
         }
     }
 
     /**
-     * Try to "refresh" playback by re-checking the current video's URL reachability.
+     * 🔁 Retry Cloudinary link check
      */
     fun fetchFreshPlayableUrl() {
-        val video = _uiState.value.video ?: run {
-            _uiState.update { it.copy(error = "No video to refresh") }
-            return
-        }
-
+        val video = _uiState.value.video ?: return
         val url = video.videoUrl
+
         if (url.isBlank()) {
             _uiState.update { it.copy(error = "No video URL available") }
             return
@@ -325,14 +244,14 @@ class VideoViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(error = "Checking video URL...") }
+
             val reachable = try {
                 withContext(Dispatchers.IO) { networkUtils.isUrlReachable(url) }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 false
             }
 
             if (reachable) {
-                // clear the error so UI can re-render and player can try again
                 _uiState.update { it.copy(error = null) }
             } else {
                 _uiState.update { it.copy(error = "Video URL unreachable or expired") }
@@ -340,45 +259,79 @@ class VideoViewModel @Inject constructor(
         }
     }
 
-    // called on pause / onCleared
+    /**
+     * 📊 Watch stat tracker
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun persistWatchStatsIfNeeded() {
-        val uid = authRepository.getCurrentUserId() ?: run {
-            Log.w("VideoViewModel", "persistWatchStatsIfNeeded: no signed-in user")
-            return
-        }
+        val uid = authRepository.getCurrentUserId() ?: return
         if (accumulatedWatchMs <= 0) return
 
-        val firestore = FirebaseFirestore.getInstance()
-        val statRef =
-            firestore.collection("users").document(uid).collection("meta").document("stats")
+        val fs = FirebaseFirestore.getInstance()
+        val statsRef = fs.collection("users")
+            .document(uid)
+            .collection("meta")
+            .document("stats")
 
-        // read existing values and update in a transaction
         try {
-            firestore.runTransaction { tx ->
-                val snap = tx.get(statRef)
+            fs.runTransaction { tx ->
+                val snap = tx.get(statsRef)
+
                 val prevTotal = snap.getLong("totalWatchMs") ?: 0L
                 val lastDate = snap.getString("lastWatchDate") ?: ""
-                var streak = (snap.getLong("currentStreakDays") ?: 0L).toInt()
-                val newTotal = prevTotal + accumulatedWatchMs
+                var streak = snap.getLong("currentStreakDays")?.toInt() ?: 0
+
                 val today = java.time.LocalDate.now().toString()
-                if (lastDate != today) {
-                    val yesterday = java.time.LocalDate.now().minusDays(1).toString()
-                    streak = if (lastDate == yesterday) streak + 1 else 1
-                }
+                val yesterday = java.time.LocalDate.now().minusDays(1).toString()
+
+                streak = if (lastDate == yesterday) streak + 1 else 1
+
                 tx.set(
-                    statRef, mapOf(
-                        "totalWatchMs" to newTotal,
+                    statsRef,
+                    mapOf(
+                        "totalWatchMs" to (prevTotal + accumulatedWatchMs),
                         "lastWatchDate" to today,
                         "currentStreakDays" to streak
-                    ), com.google.firebase.firestore.SetOptions.merge()
+                    ),
+                    com.google.firebase.firestore.SetOptions.merge()
                 )
             }.await()
+
             accumulatedWatchMs = 0L
+
         } catch (e: Exception) {
-            Log.e("VideoViewModel", "persistWatchStatsIfNeeded failed", e)
+            Log.e("VideoVM", "persistWatchStatsIfNeeded failed", e)
             _uiState.update { it.copy(error = e.message ?: "Failed to save watch stats") }
         }
     }
-}
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onCleared() {
+        try {
+            saveOnPause()
+        } catch (_: Throwable) { }
+        super.onCleared()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun saveOnPause() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            val video = state.video ?: return@launch
+
+            val uid = authRepository.getCurrentUserId() ?: return@launch
+
+            val progress = VideoProgress(
+                videoId = video.id,
+                categoryId = video.categoryId,
+                positionMs = state.currentPositionMs,
+                durationMs = state.durationMs,
+                completed = false,
+                updatedAt = System.currentTimeMillis()
+            )
+
+            videoProgressRepository.saveProgress(uid, progress)
+            persistWatchStatsIfNeeded()
+        }
+    }
+}

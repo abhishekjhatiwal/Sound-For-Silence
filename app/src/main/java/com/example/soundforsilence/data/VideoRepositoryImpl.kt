@@ -48,6 +48,40 @@ class VideoRepositoryImpl @Inject constructor(
         return "https://res.cloudinary.com/$CLOUDINARY_CLOUD_NAME/video/upload/w_400,h_225,c_fill,q_auto,f_auto/$storagePath.jpg"
     }
 
+    override suspend fun getVideoOnce(videoId: String): Video? {
+        return try {
+            val doc = firestore.collection("videos")
+                .document(videoId)
+                .get()
+                .await()
+
+            if (!doc.exists()) return null
+
+            val playable = extractPlayableUrl(doc) ?: ""
+            val thumb = computeThumbnailUrlIfMissing(doc, doc.getString("thumbnailUrl"))
+
+            Video(
+                id = doc.id,
+                categoryId = doc.getString("categoryId") ?: "",
+                title = doc.getString("title") ?: "",
+                description = doc.getString("description") ?: "",
+                duration = doc.getString("duration") ?: "",
+                thumbnailUrl = thumb,
+                videoUrl = playable,
+                order = (doc.getLong("position") ?: doc.getLong("order") ?: 0L).toInt(),
+                isLocked = doc.getBoolean("isLocked") ?: false,
+                watchProgress = 0,
+                isCompleted = false,
+                questions = emptyList()
+            )
+
+        } catch (e: Exception) {
+            println("🔥 getVideoOnce error: ${e.message}")
+            null
+        }
+    }
+
+
     // ------------------------------
     // 1️⃣ Categories as a Flow (single-count aggregation)
     // ------------------------------
